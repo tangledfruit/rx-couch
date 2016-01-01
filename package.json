@@ -1,0 +1,25 @@
+{
+  "name": "rx-couch",
+  "version": "0.0.1",
+  "description": "RxJS-flavored APIs for CouchDB",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tangledfruit/rx-couch.git"
+  },
+  "keywords": [
+    "couchdb",
+    "rx",
+    "rxjs",
+    "nosql"
+  ],
+  "author": "tangledfruit <code@tangledfruit.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tangledfruit/rx-couch/issues"
+  },
+  "homepage": "https://github.com/tangledfruit/rx-couch#readme"
+}
