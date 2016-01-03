@@ -169,11 +169,19 @@ describe('rx-couch', function () {
     });
 
     it('should throw if database name is missing', function () {
-      expect(() => server.createDatabase()).to.throw("rxCouch.createDatabase: dbName must be non-empty string");
+      expect(() => server.createDatabase()).to.throw("rxCouch.createDatabase: dbName must be a string");
     });
 
     it('should throw if database name is empty', function () {
-      expect(() => server.createDatabase('')).to.throw("rxCouch.createDatabase: dbName must be non-empty string");
+      expect(() => server.createDatabase('')).to.throw("rxCouch.createDatabase: illegal dbName");
+    });
+
+    it('should throw if database name is illegal', function () {
+      expect(() => server.createDatabase('noCapitalLetters')).to.throw("rxCouch.createDatabase: illegal dbName");
+    });
+
+    it('should throw if database name starts with underscore', function () {
+      expect(() => server.createDatabase('_users')).to.throw("rxCouch.createDatabase: illegal dbName");
     });
 
     it('should actually create a new database', function (done) {
@@ -220,11 +228,19 @@ describe('rx-couch', function () {
     });
 
     it('should throw if database name is missing', function () {
-      expect(() => server.deleteDatabase()).to.throw();
+      expect(() => server.deleteDatabase()).to.throw("rxCouch.deleteDatabase: dbName must be a string");
     });
 
     it('should throw if database name is empty', function () {
-      expect(() => server.deleteDatabase('')).to.throw();
+      expect(() => server.deleteDatabase('')).to.throw("rxCouch.deleteDatabase: illegal dbName");
+    });
+
+    it('should throw if database name is illegal', function () {
+      expect(() => server.deleteDatabase('noCapitalLetters')).to.throw("rxCouch.deleteDatabase: illegal dbName");
+    });
+
+    it('should throw if database name starts with underscore', function () {
+      expect(() => server.deleteDatabase('_users')).to.throw("rxCouch.deleteDatabase: illegal dbName");
     });
 
     it('should actually delete a new database', function (done) {
