@@ -1,4 +1,8 @@
 .git*
 .DS_Store
+.editorconfig
+.jshintrc
+.npmignore
 .travis.yml
+coverage/
 test/

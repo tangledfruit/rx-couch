@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "files": "find . -name '*.js' ! -path './node_modules/*' ! -path './coverage/*'",
-    "test": "jshint `npm run -s files` && lintspaces -i js-comments -e .editorconfig `npm run -s files` && mocha"
+    "test": "jshint `npm run -s files` && lintspaces -i js-comments -e .editorconfig `npm run -s files` && mocha",
+    "test-travis": "./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- -R spec ./test/*"
   },
   "repository": {
     "type": "git",
@@ -25,6 +26,8 @@
   "homepage": "https://github.com/tangledfruit/rx-couch#readme",
   "devDependencies": {
     "chai": "^3.4.1",
+    "coveralls": "^2.11.6",
+    "istanbul": "^0.4.1",
     "jshint": "^2.9.1-rc2",
     "lintspaces-cli": "^0.1.1",
     "mocha": "^2.3.4",
