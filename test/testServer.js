@@ -172,20 +172,55 @@ describe('rx-couch', function () {
     });
 
     it('should throw if database name is empty', function () {
-      expect(() => server.createDatabase("")).to.throw();
+      expect(() => server.createDatabase('')).to.throw();
     });
 
     it('should send an onError message if server yields unexpected result', function (done) {
 
-      nock('http://localhost:5984')
-        .post('/test-rx-couch')
+      nock('http://localhost:5979')
+        .intercept('/test-rx-couch', 'DELETE')
         .reply(500, "Server blew up");
 
-      expectOnlyError(server.createDatabase('text-rx-couch'), done);
+      expectOnlyError(new rxCouch('http://localhost:5979').createDatabase('text-rx-couch'), done);
 
     });
 
   });
 
+  //----------------------------------------------------------------------------
+
+  describe('.deleteDatabase()', function () {
+
+    nock.cleanAll();
+
+    it('should return an Observable which sends only onCompleted when done', function (done) {
+      expectNoResults(server.deleteDatabase('text-rx-couch'), done);
+    });
+
+    it('should succeed even if the database doesn\'t already exist', function (done) {
+      expectNoResults(server.deleteDatabase('text-rx-couch'), done);
+    });
+
+    it('should throw if database name is missing', function () {
+      expect(() => server.deleteDatabase()).to.throw();
+    });
+
+    it('should throw if database name is empty', function () {
+      expect(() => server.deleteDatabase('')).to.throw();
+    });
+
+    it('should send an onError message if server yields unexpected result', function (done) {
+
+      nock('http://localhost:5979')
+        .intercept('/test-rx-couch', 'DELETE')
+        .reply(500, "Server blew up");
+
+      expectOnlyError(new rxCouch('http://localhost:5979').deleteDatabase('text-rx-couch'), done);
+
+    });
+
+    nock.cleanAll();
+
+  });
 
 });
