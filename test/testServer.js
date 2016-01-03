@@ -270,8 +270,6 @@ describe("rx-couch", function () {
 
     });
 
-    nock.cleanAll();
-
   });
 
 });
