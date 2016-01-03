@@ -176,6 +176,20 @@ describe('rx-couch', function () {
       expect(() => server.createDatabase('')).to.throw("rxCouch.createDatabase: dbName must be non-empty string");
     });
 
+    it('should actually create a new database', function (done) {
+
+      const dbsAfterCreate = Rx.Observable.concat(
+        server.createDatabase('test-rx-couch'),
+        server.allDatabases());
+
+      expectOneResult(dbsAfterCreate, done,
+        (databases) => {
+          expect(databases).to.be.an('array');
+          expect(databases).to.include('test-rx-couch');
+        });
+
+    });
+
     it('should send an onError message if server yields unexpected result', function (done) {
 
       nock('http://localhost:5979')
@@ -211,6 +225,20 @@ describe('rx-couch', function () {
 
     it('should throw if database name is empty', function () {
       expect(() => server.deleteDatabase('')).to.throw();
+    });
+
+    it('should actually delete a new database', function (done) {
+
+      const dbsAfterDelete = Rx.Observable.concat(
+        server.deleteDatabase('test-rx-couch'),
+        server.allDatabases());
+
+      expectOneResult(dbsAfterDelete, done,
+        (databases) => {
+          expect(databases).to.be.an('array');
+          expect(databases).to.not.include('test-rx-couch');
+        });
+
     });
 
     it('should send an onError message if server yields unexpected result', function (done) {
