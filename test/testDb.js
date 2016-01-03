@@ -100,6 +100,8 @@ describe('rx-couch.db()', function () {
 
   before("create test database", function (done) {
 
+    this.timeout(5000);
+
     const dbsAfterCreate = Rx.Observable.concat(
       server.createDatabase('test-rx-couch-db'),
       server.allDatabases());
@@ -115,6 +117,8 @@ describe('rx-couch.db()', function () {
   //----------------------------------------------------------------------------
 
   after("remove test database", function (done) {
+
+    this.timeout(5000);
 
     const dbsAfterDelete = Rx.Observable.concat(
       server.deleteDatabase('test-rx-couch-db'),
