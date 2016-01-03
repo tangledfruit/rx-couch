@@ -92,9 +92,9 @@ const expectOnlyError = function (observable, done, match) {
 
 //------------------------------------------------------------------------------
 
-describe('rx-couch', function () {
+describe("rx-couch", function () {
 
-  it('should be defined', function () {
+  it("should be defined", function () {
 
     expect(rxCouch).to.be.a('function');
 
@@ -102,10 +102,10 @@ describe('rx-couch', function () {
 
   //----------------------------------------------------------------------------
 
-  it('should fail for malformed URL', function () {
+  it("should fail for malformed URL", function () {
 
     const badIdea = function () {
-      return new rxCouch('not a valid URL');
+      return new rxCouch("not a valid URL");
     };
 
     expect(badIdea).to.throw(/CouchDB server must not contain a path or query string/);
@@ -114,7 +114,7 @@ describe('rx-couch', function () {
 
   //----------------------------------------------------------------------------
 
-  it('should fail for URL containing a database path', function () {
+  it("should fail for URL containing a database path", function () {
 
     const badIdea = function () {
       return new rxCouch('http://localhost:5984/some_db');
@@ -129,7 +129,7 @@ describe('rx-couch', function () {
   const server = new rxCouch();
     // Outside an 'it' scope since we reuse this through the rest of the file.
 
-  it('should return a server object', function () {
+  it("should return a server object", function () {
 
     expect(server).to.be.an('object');
 
@@ -137,9 +137,9 @@ describe('rx-couch', function () {
 
   //----------------------------------------------------------------------------
 
-  describe('.allDatabases()', function () {
+  describe(".allDatabases()", function () {
 
-    it('should return an Observable which yields a list of databases', function (done) {
+    it("should return an Observable which yields a list of databases", function (done) {
 
       const dbsResult = server.allDatabases();
 
@@ -158,17 +158,17 @@ describe('rx-couch', function () {
 
   //----------------------------------------------------------------------------
 
-  describe('.createDatabase()', function () {
+  describe(".createDatabase()", function () {
 
-    it('should return an Observable which sends only onCompleted when done', function (done) {
+    it("should return an Observable which sends only onCompleted when done", function (done) {
       expectNoResults(server.createDatabase('test-rx-couch'), done);
     });
 
-    it('should succeed even if the database already exists', function (done) {
+    it("should succeed even if the database already exists", function (done) {
       expectNoResults(server.createDatabase('test-rx-couch'), done);
     });
 
-    it('should throw if database name is missing', function () {
+    it("should throw if database name is missing", function () {
       expect(() => server.createDatabase()).to.throw("rxCouch.createDatabase: dbName must be a string");
     });
 
@@ -176,15 +176,15 @@ describe('rx-couch', function () {
       expect(() => server.createDatabase('')).to.throw("rxCouch.createDatabase: illegal dbName");
     });
 
-    it('should throw if database name is illegal', function () {
+    it("should throw if database name is illegal", function () {
       expect(() => server.createDatabase('noCapitalLetters')).to.throw("rxCouch.createDatabase: illegal dbName");
     });
 
-    it('should throw if database name starts with underscore', function () {
+    it("should throw if database name starts with underscore", function () {
       expect(() => server.createDatabase('_users')).to.throw("rxCouch.createDatabase: illegal dbName");
     });
 
-    it('should actually create a new database', function (done) {
+    it("should actually create a new database", function (done) {
 
       const dbsAfterCreate = Rx.Observable.concat(
         server.createDatabase('test-rx-couch'),
@@ -198,7 +198,7 @@ describe('rx-couch', function () {
 
     });
 
-    it('should send an onError message if server yields unexpected result', function (done) {
+    it("should send an onError message if server yields unexpected result", function (done) {
 
       nock('http://localhost:5979')
         .put('/test-rx-couch')
@@ -215,35 +215,35 @@ describe('rx-couch', function () {
 
   //----------------------------------------------------------------------------
 
-  describe('.deleteDatabase()', function () {
+  describe(".deleteDatabase()", function () {
 
     nock.cleanAll();
 
-    it('should return an Observable which sends only onCompleted when done', function (done) {
+    it("should return an Observable which sends only onCompleted when done", function (done) {
       expectNoResults(server.deleteDatabase('test-rx-couch'), done);
     });
 
-    it('should succeed even if the database doesn\'t already exist', function (done) {
+    it("should succeed even if the database doesn\'t already exist", function (done) {
       expectNoResults(server.deleteDatabase('test-rx-couch'), done);
     });
 
-    it('should throw if database name is missing', function () {
+    it("should throw if database name is missing", function () {
       expect(() => server.deleteDatabase()).to.throw("rxCouch.deleteDatabase: dbName must be a string");
     });
 
-    it('should throw if database name is empty', function () {
+    it("should throw if database name is empty", function () {
       expect(() => server.deleteDatabase('')).to.throw("rxCouch.deleteDatabase: illegal dbName");
     });
 
-    it('should throw if database name is illegal', function () {
+    it("should throw if database name is illegal", function () {
       expect(() => server.deleteDatabase('noCapitalLetters')).to.throw("rxCouch.deleteDatabase: illegal dbName");
     });
 
-    it('should throw if database name starts with underscore', function () {
+    it("should throw if database name starts with underscore", function () {
       expect(() => server.deleteDatabase('_users')).to.throw("rxCouch.deleteDatabase: illegal dbName");
     });
 
-    it('should actually delete a new database', function (done) {
+    it("should actually delete a new database", function (done) {
 
       const dbsAfterDelete = Rx.Observable.concat(
         server.deleteDatabase('test-rx-couch'),
@@ -257,7 +257,7 @@ describe('rx-couch', function () {
 
     });
 
-    it('should send an onError message if server yields unexpected result', function (done) {
+    it("should send an onError message if server yields unexpected result", function (done) {
 
       nock('http://localhost:5979')
         .delete('/test-rx-couch')
