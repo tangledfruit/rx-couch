@@ -60,6 +60,8 @@ const expectNoResults = function (observable, done) {
 
 const expectOnlyError = function (observable, done, match) {
 
+  expect(match).to.be.a('function');
+
   var didSendData = false;
   var failure;
 
@@ -73,8 +75,7 @@ const expectOnlyError = function (observable, done, match) {
     function (err) {
       if (!failure) {
         try {
-          if (match)
-            match(err);
+          match(err);
         }
         catch (err) {
           failure = err;
@@ -107,7 +108,7 @@ describe('rx-couch', function () {
       return new rxCouch('not a valid URL');
     };
 
-    expect(badIdea).to.throw();
+    expect(badIdea).to.throw(/CouchDB server must not contain a path or query string/);
 
   });
 
@@ -119,7 +120,7 @@ describe('rx-couch', function () {
       return new rxCouch('http://localhost:5984/some_db');
     };
 
-    expect(badIdea).to.throw();
+    expect(badIdea).to.throw(/CouchDB server must not contain a path or query string/);
 
   });
 
@@ -168,20 +169,23 @@ describe('rx-couch', function () {
     });
 
     it('should throw if database name is missing', function () {
-      expect(() => server.createDatabase()).to.throw();
+      expect(() => server.createDatabase()).to.throw("rxCouch.createDatabase: dbName must be non-empty string");
     });
 
     it('should throw if database name is empty', function () {
-      expect(() => server.createDatabase('')).to.throw();
+      expect(() => server.createDatabase('')).to.throw("rxCouch.createDatabase: dbName must be non-empty string");
     });
 
     it('should send an onError message if server yields unexpected result', function (done) {
 
       nock('http://localhost:5979')
-        .intercept('/test-rx-couch', 'DELETE')
+        .put('/test-rx-couch')
         .reply(500, "Server blew up");
 
-      expectOnlyError(new rxCouch('http://localhost:5979').createDatabase('text-rx-couch'), done);
+      expectOnlyError(new rxCouch('http://localhost:5979').createDatabase('text-rx-couch'), done,
+        (err) => {
+          expect(err.message).to.equal("HTTP Error 500: Server blew up");
+        });
 
     });
 
@@ -215,7 +219,10 @@ describe('rx-couch', function () {
         .intercept('/test-rx-couch', 'DELETE')
         .reply(500, "Server blew up");
 
-      expectOnlyError(new rxCouch('http://localhost:5979').deleteDatabase('text-rx-couch'), done);
+      expectOnlyError(new rxCouch('http://localhost:5979').deleteDatabase('text-rx-couch'), done,
+        (err) => {
+          expect(err.message).to.equal("HTTP Error 500: Server blew up");
+        });
 
     });
 
