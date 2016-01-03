@@ -102,6 +102,17 @@ describe("rx-couch", function () {
 
   //----------------------------------------------------------------------------
 
+  it("should fail if called as a non-constructor", function () {
+
+    expect(function () {
+      return rxCouch('http://localhost:5984');
+        // WRONG: should be `new rxCouch(...)`!
+    }).to.throw(/new rxCouch/);
+
+  });
+
+  //----------------------------------------------------------------------------
+
   it("should fail for malformed URL", function () {
 
     const badIdea = function () {
