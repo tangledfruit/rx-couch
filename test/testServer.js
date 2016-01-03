@@ -161,11 +161,11 @@ describe('rx-couch', function () {
   describe('.createDatabase()', function () {
 
     it('should return an Observable which sends only onCompleted when done', function (done) {
-      expectNoResults(server.createDatabase('text-rx-couch'), done);
+      expectNoResults(server.createDatabase('test-rx-couch'), done);
     });
 
     it('should succeed even if the database already exists', function (done) {
-      expectNoResults(server.createDatabase('text-rx-couch'), done);
+      expectNoResults(server.createDatabase('test-rx-couch'), done);
     });
 
     it('should throw if database name is missing', function () {
@@ -180,11 +180,11 @@ describe('rx-couch', function () {
 
       nock('http://localhost:5979')
         .put('/test-rx-couch')
-        .reply(500, "Server blew up");
+        .reply(500);
 
-      expectOnlyError(new rxCouch('http://localhost:5979').createDatabase('text-rx-couch'), done,
+      expectOnlyError(new rxCouch('http://localhost:5979').createDatabase('test-rx-couch'), done,
         (err) => {
-          expect(err.message).to.equal("HTTP Error 500: Server blew up");
+          expect(err.message).to.equal("HTTP Error 500: Internal Server Error");
         });
 
     });
@@ -198,11 +198,11 @@ describe('rx-couch', function () {
     nock.cleanAll();
 
     it('should return an Observable which sends only onCompleted when done', function (done) {
-      expectNoResults(server.deleteDatabase('text-rx-couch'), done);
+      expectNoResults(server.deleteDatabase('test-rx-couch'), done);
     });
 
     it('should succeed even if the database doesn\'t already exist', function (done) {
-      expectNoResults(server.deleteDatabase('text-rx-couch'), done);
+      expectNoResults(server.deleteDatabase('test-rx-couch'), done);
     });
 
     it('should throw if database name is missing', function () {
@@ -216,12 +216,12 @@ describe('rx-couch', function () {
     it('should send an onError message if server yields unexpected result', function (done) {
 
       nock('http://localhost:5979')
-        .intercept('/test-rx-couch', 'DELETE')
-        .reply(500, "Server blew up");
+        .delete('/test-rx-couch')
+        .reply(500);
 
-      expectOnlyError(new rxCouch('http://localhost:5979').deleteDatabase('text-rx-couch'), done,
+      expectOnlyError(new rxCouch('http://localhost:5979').deleteDatabase('test-rx-couch'), done,
         (err) => {
-          expect(err.message).to.equal("HTTP Error 500: Server blew up");
+          expect(err.message).to.equal("HTTP Error 500: Internal Server Error");
         });
 
     });
