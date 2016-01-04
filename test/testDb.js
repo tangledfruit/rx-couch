@@ -156,11 +156,11 @@ describe("rx-couch.db()", function () {
 
   //----------------------------------------------------------------------------
 
-  const testDb = server.db('rx-couch-test-db');
+  const db = server.db('test-rx-couch-db');
     // Defined out of scope because we use it throughout this test suite.
 
   it("should return an object", function () {
-    expect(testDb).to.be.an('object');
+    expect(db).to.be.an('object');
   });
 
 });
