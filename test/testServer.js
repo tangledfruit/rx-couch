@@ -254,7 +254,7 @@ describe("rx-couch", function () {
       expect(() => server.deleteDatabase('_users')).to.throw("rxCouch.deleteDatabase: illegal dbName");
     });
 
-    it("should actually delete a new database", function (done) {
+    it("should actually delete the existing database", function (done) {
 
       const dbsAfterDelete = Rx.Observable.concat(
         server.deleteDatabase('test-rx-couch'),
