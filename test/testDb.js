@@ -165,6 +165,8 @@ describe("rx-couch.db()", function () {
 
   //----------------------------------------------------------------------------
 
+  var rev1;
+
   describe(".put()", function () {
 
     it("should be defined", function () {
@@ -199,8 +201,6 @@ describe("rx-couch.db()", function () {
 
     //--------------------------------------------------------------------------
 
-    var rev1;
-
     it("should create a new document using specific ID if provided", function (done) {
 
       // http://docs.couchdb.org/en/latest/api/document/common.html#put--db-docid
@@ -222,7 +222,7 @@ describe("rx-couch.db()", function () {
 
     it("should update an existing document when _id and _rev are provided", function (done) {
 
-      const putResult = db.put({"_id": "testing123", "_rev": rev1, foo: "bar"});
+      const putResult = db.put({"_id": "testing123", "_rev": rev1, foo: "baz"});
 
       expectOneResult(putResult, done,
         (putResponse) => {
@@ -256,6 +256,71 @@ describe("rx-couch.db()", function () {
       expectOnlyError(putResult, done,
         (err) => {
           expect(err.message).to.equal("HTTP Error 400: Bad Request");
+        });
+
+    });
+
+  });
+
+  //----------------------------------------------------------------------------
+
+  describe(".get()", function () {
+
+    // http://docs.couchdb.org/en/latest/api/document/common.html#get--db-docid
+
+    it("should be defined", function () {
+      expect(db).to.respondTo('get');
+    });
+
+    it("should throw if no document ID is provided", function () {
+      expect(() => db.get()).to.throw("rxCouch.db.get: missing document ID");
+    });
+
+    it("should throw if an invalid document ID is provided", function () {
+      expect(() => db.get(42)).to.throw("rxCouch.db.get: invalid document ID");
+    });
+
+    //--------------------------------------------------------------------------
+
+    it("should retrieve a document's current value if no options are provided", function (done) {
+
+      const getResult = db.get("testing123");
+
+      expectOneResult(getResult, done,
+        (getResponse) => {
+          expect(getResponse).to.be.an('object');
+          expect(getResponse._id).to.equal("testing123");
+          expect(getResponse._rev).to.match(/^2-/);
+          expect(getResponse.foo).to.equal('baz');
+        });
+
+    });
+
+    //--------------------------------------------------------------------------
+
+    it("should pass through options when provided", function (done) {
+
+      const getResult = db.get("testing123", {"rev": rev1});
+
+      expectOneResult(getResult, done,
+        (getResponse) => {
+          expect(getResponse).to.be.an('object');
+          expect(getResponse._id).to.equal("testing123");
+          expect(getResponse._rev).to.match(/^1-/);
+          expect(getResponse.foo).to.equal('bar');
+        });
+
+    });
+
+    //--------------------------------------------------------------------------
+
+    it("should fail when _id doesn't match an existing document", function (done) {
+
+      const getResult = db.get("testing432");
+
+      expectOnlyError(getResult, done,
+        (err) => {
+          expect(err.message).to.equal("HTTP Error 404: Not Found");
         });
 
     });
