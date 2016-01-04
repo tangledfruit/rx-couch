@@ -165,7 +165,7 @@ describe("rx-couch.db()", function () {
 
   //----------------------------------------------------------------------------
 
-  var rev1;
+  var rev1, rev2;
 
   describe(".put()", function () {
 
@@ -230,6 +230,7 @@ describe("rx-couch.db()", function () {
           expect(putResponse.id).to.equal("testing123");
           expect(putResponse.ok).to.equal(true);
           expect(putResponse.rev).to.be.match(/^2-/);
+          rev2 = putResponse.rev;
         });
 
     });
@@ -317,6 +318,74 @@ describe("rx-couch.db()", function () {
     it("should fail when _id doesn't match an existing document", function (done) {
 
       const getResult = db.get("testing432");
+
+      expectOnlyError(getResult, done,
+        (err) => {
+          expect(err.message).to.equal("HTTP Error 404: Not Found");
+        });
+
+    });
+
+  });
+
+  //----------------------------------------------------------------------------
+
+  describe(".delete()", function () {
+
+    it("should be defined", function () {
+      expect(db).to.respondTo('delete');
+    });
+
+    it("should throw if no document ID is provided", function () {
+      expect(() => db.delete()).to.throw("rxCouch.db.delete: missing document ID");
+    });
+
+    it("should throw if an invalid document ID is provided", function () {
+      expect(() => db.delete(42)).to.throw("rxCouch.db.delete: invalid document ID");
+    });
+
+    it("should throw if no revision ID is provided", function () {
+      expect(() => db.delete('testing123')).to.throw("rxCouch.db.delete: missing revision ID");
+    });
+
+    it("should throw if an invalid revision ID is provided", function () {
+      expect(() => db.delete('testing123', 42)).to.throw("rxCouch.db.delete: invalid revision ID");
+    });
+
+    //--------------------------------------------------------------------------
+
+    it("should fail when _id matches an existing document but incorrect _rev is provided", function (done) {
+
+      const deleteResult = db.delete('testing123', 'bogus');
+
+      expectOnlyError(deleteResult, done,
+        (err) => {
+          expect(err.message).to.equal("HTTP Error 400: Bad Request");
+        });
+
+    });
+
+    //--------------------------------------------------------------------------
+
+    it("should delete an existing document when correct _id and _rev are provided", function (done) {
+
+      const deleteResult = db.delete("testing123", rev2);
+
+      expectOneResult(deleteResult, done,
+        (deleteResponse) => {
+          expect(deleteResponse).to.be.an('object');
+          expect(deleteResponse.id).to.equal("testing123");
+          expect(deleteResponse.ok).to.equal(true);
+          expect(deleteResponse.rev).to.match(/^3-/);
+        });
+
+    });
+
+    //--------------------------------------------------------------------------
+
+    it("should actually have deleted the existing document", function (done) {
+
+      const getResult = db.get('testing123');
 
       expectOnlyError(getResult, done,
         (err) => {
