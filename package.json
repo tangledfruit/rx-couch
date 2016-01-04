@@ -35,6 +35,6 @@
   },
   "dependencies": {
     "rx": "^4.0.7",
-    "rx-fetch": "^1.1.0"
+    "rx-fetch": "^1.1.1"
   }
 }
