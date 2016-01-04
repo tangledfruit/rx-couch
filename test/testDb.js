@@ -92,7 +92,7 @@ const expectOnlyError = function (observable, done, match) {
 
 //------------------------------------------------------------------------------
 
-describe('rx-couch.db()', function () {
+describe("rx-couch.db()", function () {
 
   const server = new rxCouch('http://127.0.0.1:5984');
 
@@ -134,32 +134,32 @@ describe('rx-couch.db()', function () {
 
   //----------------------------------------------------------------------------
 
-  it('should be defined', function () {
+  it("should be defined", function () {
     expect(server).to.respondTo('db');
   });
 
-  it('should throw if database name is missing', function () {
+  it("should throw if database name is missing", function () {
     expect(() => server.db()).to.throw("rxCouch.db: dbName must be a string");
   });
 
-  it('should throw if database name is empty', function () {
+  it("should throw if database name is empty", function () {
     expect(() => server.db('')).to.throw("rxCouch.db: illegal dbName");
   });
 
-  it('should throw if database name is illegal', function () {
+  it("should throw if database name is illegal", function () {
     expect(() => server.db('noCapitalLetters')).to.throw("rxCouch.db: illegal dbName");
   });
 
-  it('should throw if database name is illegal', function () {
+  it("should throw if database name is illegal", function () {
     expect(() => server.db('_users')).to.throw("rxCouch.db: illegal dbName");
   });
 
   //----------------------------------------------------------------------------
 
-  var testDb = server.db('rx-couch-test-db');
+  const testDb = server.db('rx-couch-test-db');
     // Defined out of scope because we use it throughout this test suite.
 
-  it('should return an object', function () {
+  it("should return an object", function () {
     expect(testDb).to.be.an('object');
   });
 
