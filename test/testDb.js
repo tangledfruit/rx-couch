@@ -163,4 +163,103 @@ describe("rx-couch.db()", function () {
     expect(db).to.be.an('object');
   });
 
+  //----------------------------------------------------------------------------
+
+  describe(".put()", function () {
+
+    it("should be defined", function () {
+      expect(db).to.respondTo('put');
+    });
+
+    it("should throw if no document value is provided", function () {
+      expect(() => db.put()).to.throw("rxCouch.db.put: missing document value");
+    });
+
+    it("should throw if an invalid document value is provided", function () {
+      expect(() => db.put(42)).to.throw("rxCouch.db.put: invalid document value");
+    });
+
+    //--------------------------------------------------------------------------
+
+    it("should assign a document ID if no document ID is provided", function (done) {
+
+      // http://docs.couchdb.org/en/latest/api/database/common.html#post--db
+
+      const putResult = db.put({foo: "bar"});
+
+      expectOneResult(putResult, done,
+        (putResponse) => {
+          expect(putResponse).to.be.an('object');
+          expect(putResponse.id).to.be.a('string');
+          expect(putResponse.ok).to.equal(true);
+          expect(putResponse.rev).to.be.a('string');
+        });
+
+    });
+
+    //--------------------------------------------------------------------------
+
+    var rev1;
+
+    it("should create a new document using specific ID if provided", function (done) {
+
+      // http://docs.couchdb.org/en/latest/api/document/common.html#put--db-docid
+
+      const putResult = db.put({"_id": "testing123", foo: "bar"});
+
+      expectOneResult(putResult, done,
+        (putResponse) => {
+          expect(putResponse).to.be.an('object');
+          expect(putResponse.id).to.equal("testing123");
+          expect(putResponse.ok).to.equal(true);
+          expect(putResponse.rev).to.match(/^1-/);
+          rev1 = putResponse.rev;
+        });
+
+    });
+
+    //--------------------------------------------------------------------------
+
+    it("should update an existing document when _id and _rev are provided", function (done) {
+
+      const putResult = db.put({"_id": "testing123", "_rev": rev1, foo: "bar"});
+
+      expectOneResult(putResult, done,
+        (putResponse) => {
+          expect(putResponse).to.be.an('object');
+          expect(putResponse.id).to.equal("testing123");
+          expect(putResponse.ok).to.equal(true);
+          expect(putResponse.rev).to.be.match(/^2-/);
+        });
+
+    });
+
+    //--------------------------------------------------------------------------
+
+    it("should fail when _id matches an existing document but no _rev is provided", function (done) {
+
+      const putResult = db.put({"_id": "testing123", foo: "bar"});
+
+      expectOnlyError(putResult, done,
+        (err) => {
+          expect(err.message).to.equal("HTTP Error 409: Conflict");
+        });
+
+    });
+
+    //--------------------------------------------------------------------------
+
+    it("should fail when _id matches an existing document but incorrect _rev is provided", function (done) {
+
+      const putResult = db.put({"_id": "testing123", "_rev": "bogus", foo: "bar"});
+
+      expectOnlyError(putResult, done,
+        (err) => {
+          expect(err.message).to.equal("HTTP Error 400: Bad Request");
+        });
+
+    });
+
+  });
+
 });
