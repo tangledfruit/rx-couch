@@ -199,6 +199,14 @@ describe("rx-couch", function () {
       expect(() => server.createDatabase('_users')).to.throw("rxCouch.createDatabase: illegal dbName");
     });
 
+    it('should throw if options is present, but not an object', function () {
+      expect(() => server.createDatabase('x', 42)).to.throw("rxCouch.createDatabase: options, if present, must be an object");
+    });
+
+    it('should throw if options.failIfExists is present, but not a boolean', function () {
+      expect(() => server.createDatabase('x', {failIfExists: "bogus"})).to.throw("rxCouch.createDatabase: options.failIfExists, if present, must be a boolean");
+    });
+
     //--------------------------------------------------------------------------
 
     it("should actually create a new database", function (done) {
