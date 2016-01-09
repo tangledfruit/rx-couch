@@ -220,6 +220,24 @@ describe("rx-couch.db()", function () {
 
     //--------------------------------------------------------------------------
 
+    it("should not alter the object that was provided to it", function (done) {
+
+      // http://docs.couchdb.org/en/latest/api/document/common.html#put--db-docid
+
+      var putObject = {"_id": "testing234", foo: "bar"};
+      const putResult = db.put(putObject);
+
+      expectOneResult(putResult, done,
+        (putResponse) => {
+          expect(putResponse).to.be.an('object');
+          expect(putResponse.id).to.equal("testing234");
+          expect(putObject).to.deep.equal({"_id": "testing234", foo: "bar"});
+        });
+
+    });
+
+    //--------------------------------------------------------------------------
+
     it("should update an existing document when _id and _rev are provided", function (done) {
 
       const putResult = db.put({"_id": "testing123", "_rev": rev1, foo: "baz"});
