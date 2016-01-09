@@ -23,10 +23,16 @@ server.allDatabases()
   .subscribe((databases) => console.log(databases));
   // -> ["_replicator", "_users", "my-database", etc...]
 
-// Create a database.
+// Create a database. By default, this will ignore 412 errors on the assumption
+// that this means "database already exists."
 // http://docs.couchdb.org/en/latest/api/database/common.html#put--db
 server.createDatabase('test-rx-couch')
   .subscribeOnCompleted(); // fires when done
+
+// Create a database and fail if the database already exists.
+// http://docs.couchdb.org/en/latest/api/database/common.html#put--db
+server.createDatabase('test-rx-couch', {failIfExists: true})
+  .subscribeOnError(); // In this example, an error event would be sent.
 
 // Delete a database.
 // http://docs.couchdb.org/en/latest/api/database/common.html#delete--db

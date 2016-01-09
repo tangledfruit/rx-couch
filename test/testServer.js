@@ -179,6 +179,10 @@ describe("rx-couch", function () {
       expectNoResults(server.createDatabase('test-rx-couch'), done);
     });
 
+    it("should succeed even if the database already exists {failIfExists: false}", function (done) {
+      expectNoResults(server.createDatabase('test-rx-couch', {failIfExists: false}), done);
+    });
+
     it("should throw if database name is missing", function () {
       expect(() => server.createDatabase()).to.throw("rxCouch.createDatabase: dbName must be a string");
     });
@@ -195,6 +199,16 @@ describe("rx-couch", function () {
       expect(() => server.createDatabase('_users')).to.throw("rxCouch.createDatabase: illegal dbName");
     });
 
+    it('should throw if options is present, but not an object', function () {
+      expect(() => server.createDatabase('x', 42)).to.throw("rxCouch.createDatabase: options, if present, must be an object");
+    });
+
+    it('should throw if options.failIfExists is present, but not a boolean', function () {
+      expect(() => server.createDatabase('x', {failIfExists: "bogus"})).to.throw("rxCouch.createDatabase: options.failIfExists, if present, must be a boolean");
+    });
+
+    //--------------------------------------------------------------------------
+
     it("should actually create a new database", function (done) {
 
       const dbsAfterCreate = Rx.Observable.concat(
@@ -208,6 +222,20 @@ describe("rx-couch", function () {
         });
 
     });
+
+    //--------------------------------------------------------------------------
+
+    it("should signal an error if database already exists (but only if so requested)", function (done) {
+
+      const createWithFail = server.createDatabase('test-rx-couch', {failIfExists: true});
+
+      expectOnlyError(createWithFail, done, (err) => {
+        expect(err.message).to.equal("HTTP Error 412: Precondition Failed");
+      });
+
+    });
+
+    //--------------------------------------------------------------------------
 
     it("should send an onError message if server yields unexpected result", function (done) {
 
@@ -254,6 +282,8 @@ describe("rx-couch", function () {
       expect(() => server.deleteDatabase('_users')).to.throw("rxCouch.deleteDatabase: illegal dbName");
     });
 
+    //--------------------------------------------------------------------------
+
     it("should actually delete the existing database", function (done) {
 
       const dbsAfterDelete = Rx.Observable.concat(
@@ -267,6 +297,8 @@ describe("rx-couch", function () {
         });
 
     });
+
+    //--------------------------------------------------------------------------
 
     it("should send an onError message if server yields unexpected result", function (done) {
 
