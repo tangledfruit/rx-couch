@@ -1,94 +1,12 @@
 'use strict';
 
+require('co-mocha');
+require('rx-to-async-iterator');
+
 const Rx = require('rx');
-const rxCouch = require('../lib/server');
 const expect = require('chai').expect;
 const nock = require('nock');
-
-//------------------------------------------------------------------------------
-
-const expectOneResult = function (observable, done, match) {
-
-  var didSendData = false;
-  var failure;
-
-  observable.subscribe(
-
-    function (value) {
-      try {
-        if (didSendData && !failure)
-          failure = new Error("Unexpected second result: ", value);
-        else
-          match(value);
-      }
-      catch (err) {
-        failure = err;
-      }
-    },
-
-    function (err) {
-      done(err);
-    },
-
-    function () {
-      done(failure);
-    });
-
-};
-
-//------------------------------------------------------------------------------
-
-const expectNoResults = function (observable, done) {
-
-  var failure;
-
-  observable.subscribe(
-    function (value) {
-      if (!failure)
-        failure = new Error("Unexpected value: ", value);
-    },
-    function (err) {
-      done(err);
-    },
-    function () {
-      done(failure);
-    });
-
-};
-
-//------------------------------------------------------------------------------
-
-const expectOnlyError = function (observable, done, match) {
-
-  expect(match).to.be.a('function');
-
-  var didSendData = false;
-  var failure;
-
-  observable.subscribe(
-
-    function (value) {
-      if (!failure)
-        failure = new Error("onNext was called with value: ", value);
-    },
-
-    function (err) {
-      if (!failure) {
-        try {
-          match(err);
-        }
-        catch (err) {
-          failure = err;
-        }
-      }
-      done(failure);
-    },
-
-    function () {
-      done(new Error("onCompleted was called"));
-    });
-
-};
+const rxCouch = require('../lib/server');
 
 //------------------------------------------------------------------------------
 
@@ -98,37 +16,31 @@ describe("rx-couch.db()", function () {
 
   //----------------------------------------------------------------------------
 
-  before("create test database", function (done) {
+  before("create test database", function* () {
 
     this.timeout(5000);
 
-    const dbsAfterCreate = Rx.Observable.concat(
+    const dbsAfterCreate = yield (Rx.Observable.concat(
       server.createDatabase('test-rx-couch-db'),
-      server.allDatabases());
+      server.allDatabases())).shouldGenerateOneValue();
 
-    expectOneResult(dbsAfterCreate, done,
-      (databases) => {
-        expect(databases).to.be.an('array');
-        expect(databases).to.include('test-rx-couch-db');
-      });
+    expect(dbsAfterCreate).to.be.an('array');
+    expect(dbsAfterCreate).to.include('test-rx-couch-db');
 
   });
 
   //----------------------------------------------------------------------------
 
-  after("remove test database", function (done) {
+  after("remove test database", function* () {
 
     this.timeout(5000);
 
-    const dbsAfterDelete = Rx.Observable.concat(
+    const dbsAfterDelete = yield (Rx.Observable.concat(
       server.deleteDatabase('test-rx-couch-db'),
-      server.allDatabases());
+      server.allDatabases())).shouldGenerateOneValue();
 
-    expectOneResult(dbsAfterDelete, done,
-      (databases) => {
-        expect(databases).to.be.an('array');
-        expect(databases).to.not.include('test-rx-couch-db');
-      });
+    expect(dbsAfterDelete).to.be.an('array');
+    expect(dbsAfterDelete).to.not.include('test-rx-couch-db');
 
   });
 
@@ -183,99 +95,79 @@ describe("rx-couch.db()", function () {
 
     //--------------------------------------------------------------------------
 
-    it("should assign a document ID if no document ID is provided", function (done) {
+    it("should assign a document ID if no document ID is provided", function* () {
 
       // http://docs.couchdb.org/en/latest/api/database/common.html#post--db
 
-      const putResult = db.put({foo: "bar"});
+      const putResponse = yield db.put({foo: "bar"}).shouldGenerateOneValue();
 
-      expectOneResult(putResult, done,
-        (putResponse) => {
-          expect(putResponse).to.be.an('object');
-          expect(putResponse.id).to.be.a('string');
-          expect(putResponse.ok).to.equal(true);
-          expect(putResponse.rev).to.be.a('string');
-        });
+      expect(putResponse).to.be.an('object');
+      expect(putResponse.id).to.be.a('string');
+      expect(putResponse.ok).to.equal(true);
+      expect(putResponse.rev).to.be.a('string');
 
     });
 
     //--------------------------------------------------------------------------
 
-    it("should create a new document using specific ID if provided", function (done) {
+    it("should create a new document using specific ID if provided", function* () {
 
       // http://docs.couchdb.org/en/latest/api/document/common.html#put--db-docid
 
-      const putResult = db.put({"_id": "testing123", foo: "bar"});
+      const putResponse = yield db.put({"_id": "testing123", foo: "bar"}).shouldGenerateOneValue();
 
-      expectOneResult(putResult, done,
-        (putResponse) => {
-          expect(putResponse).to.be.an('object');
-          expect(putResponse.id).to.equal("testing123");
-          expect(putResponse.ok).to.equal(true);
-          expect(putResponse.rev).to.match(/^1-/);
-          rev1 = putResponse.rev;
-        });
+      expect(putResponse).to.be.an('object');
+      expect(putResponse.id).to.equal("testing123");
+      expect(putResponse.ok).to.equal(true);
+      expect(putResponse.rev).to.match(/^1-/);
+      rev1 = putResponse.rev;
 
     });
 
     //--------------------------------------------------------------------------
 
-    it("should not alter the object that was provided to it", function (done) {
+    it("should not alter the object that was provided to it", function* () {
 
       // http://docs.couchdb.org/en/latest/api/document/common.html#put--db-docid
 
       var putObject = {"_id": "testing234", foo: "bar"};
-      const putResult = db.put(putObject);
+      const putResponse = yield db.put(putObject).shouldGenerateOneValue();
 
-      expectOneResult(putResult, done,
-        (putResponse) => {
-          expect(putResponse).to.be.an('object');
-          expect(putResponse.id).to.equal("testing234");
-          expect(putObject).to.deep.equal({"_id": "testing234", foo: "bar"});
-        });
+      expect(putResponse).to.be.an('object');
+      expect(putResponse.id).to.equal("testing234");
+      expect(putObject).to.deep.equal({"_id": "testing234", foo: "bar"});
 
     });
 
     //--------------------------------------------------------------------------
 
-    it("should update an existing document when _id and _rev are provided", function (done) {
+    it("should update an existing document when _id and _rev are provided", function* () {
 
-      const putResult = db.put({"_id": "testing123", "_rev": rev1, foo: "baz"});
+      const putResponse = yield db.put({"_id": "testing123", "_rev": rev1, foo: "baz"}).shouldGenerateOneValue();
 
-      expectOneResult(putResult, done,
-        (putResponse) => {
-          expect(putResponse).to.be.an('object');
-          expect(putResponse.id).to.equal("testing123");
-          expect(putResponse.ok).to.equal(true);
-          expect(putResponse.rev).to.be.match(/^2-/);
-          rev2 = putResponse.rev;
-        });
+      expect(putResponse).to.be.an('object');
+      expect(putResponse.id).to.equal("testing123");
+      expect(putResponse.ok).to.equal(true);
+      expect(putResponse.rev).to.be.match(/^2-/);
+      rev2 = putResponse.rev;
 
     });
 
     //--------------------------------------------------------------------------
 
-    it("should fail when _id matches an existing document but no _rev is provided", function (done) {
+    it("should fail when _id matches an existing document but no _rev is provided", function* () {
 
-      const putResult = db.put({"_id": "testing123", foo: "bar"});
-
-      expectOnlyError(putResult, done,
-        (err) => {
-          expect(err.message).to.equal("HTTP Error 409: Conflict");
-        });
+      const err = yield db.put({"_id": "testing123", foo: "bar"}).shouldThrow();
+      expect(err.message).to.equal("HTTP Error 409: Conflict");
 
     });
 
     //--------------------------------------------------------------------------
 
-    it("should fail when _id matches an existing document but incorrect _rev is provided", function (done) {
+    it("should fail when _id matches an existing document but incorrect _rev is provided", function* () {
 
-      const putResult = db.put({"_id": "testing123", "_rev": "bogus", foo: "bar"});
-
-      expectOnlyError(putResult, done,
-        (err) => {
-          expect(err.message).to.equal("HTTP Error 400: Bad Request");
-        });
+      const err = yield db.put({"_id": "testing123", "_rev": "bogus", foo: "bar"}).shouldThrow();
+      expect(err.message).to.equal("HTTP Error 400: Bad Request");
 
     });
 
@@ -301,46 +193,36 @@ describe("rx-couch.db()", function () {
 
     //--------------------------------------------------------------------------
 
-    it("should retrieve a document's current value if no options are provided", function (done) {
+    it("should retrieve a document's current value if no options are provided", function* () {
 
-      const getResult = db.get("testing123");
+      const getResponse = yield db.get("testing123").shouldGenerateOneValue();
 
-      expectOneResult(getResult, done,
-        (getResponse) => {
-          expect(getResponse).to.be.an('object');
-          expect(getResponse._id).to.equal("testing123");
-          expect(getResponse._rev).to.match(/^2-/);
-          expect(getResponse.foo).to.equal('baz');
-        });
+      expect(getResponse).to.be.an('object');
+      expect(getResponse._id).to.equal("testing123");
+      expect(getResponse._rev).to.match(/^2-/);
+      expect(getResponse.foo).to.equal('baz');
 
     });
 
     //--------------------------------------------------------------------------
 
-    it("should pass through options when provided", function (done) {
+    it("should pass through options when provided", function* () {
 
-      const getResult = db.get("testing123", {"rev": rev1});
+      const getResponse = yield db.get("testing123", {"rev": rev1}).shouldGenerateOneValue();
 
-      expectOneResult(getResult, done,
-        (getResponse) => {
-          expect(getResponse).to.be.an('object');
-          expect(getResponse._id).to.equal("testing123");
-          expect(getResponse._rev).to.match(/^1-/);
-          expect(getResponse.foo).to.equal('bar');
-        });
+      expect(getResponse).to.be.an('object');
+      expect(getResponse._id).to.equal("testing123");
+      expect(getResponse._rev).to.match(/^1-/);
+      expect(getResponse.foo).to.equal('bar');
 
     });
 
     //--------------------------------------------------------------------------
 
-    it("should fail when _id doesn't match an existing document", function (done) {
+    it("should fail when _id doesn't match an existing document", function* () {
 
-      const getResult = db.get("testing432");
-
-      expectOnlyError(getResult, done,
-        (err) => {
-          expect(err.message).to.equal("HTTP Error 404: Not Found");
-        });
+      const err = yield db.get("testing432").shouldThrow();
+      expect(err.message).to.equal("HTTP Error 404: Not Found");
 
     });
 
@@ -372,43 +254,31 @@ describe("rx-couch.db()", function () {
 
     //--------------------------------------------------------------------------
 
-    it("should fail when _id matches an existing document but incorrect _rev is provided", function (done) {
+    it("should fail when _id matches an existing document but incorrect _rev is provided", function* () {
 
-      const deleteResult = db.delete('testing123', 'bogus');
-
-      expectOnlyError(deleteResult, done,
-        (err) => {
-          expect(err.message).to.equal("HTTP Error 400: Bad Request");
-        });
+      const err = yield db.delete('testing123', 'bogus').shouldThrow();
+      expect(err.message).to.equal("HTTP Error 400: Bad Request");
 
     });
 
     //--------------------------------------------------------------------------
 
-    it("should delete an existing document when correct _id and _rev are provided", function (done) {
+    it("should delete an existing document when correct _id and _rev are provided", function* () {
 
-      const deleteResult = db.delete("testing123", rev2);
-
-      expectOneResult(deleteResult, done,
-        (deleteResponse) => {
-          expect(deleteResponse).to.be.an('object');
-          expect(deleteResponse.id).to.equal("testing123");
-          expect(deleteResponse.ok).to.equal(true);
-          expect(deleteResponse.rev).to.match(/^3-/);
-        });
+      const deleteResponse = yield db.delete("testing123", rev2).shouldGenerateOneValue();
+      expect(deleteResponse).to.be.an('object');
+      expect(deleteResponse.id).to.equal("testing123");
+      expect(deleteResponse.ok).to.equal(true);
+      expect(deleteResponse.rev).to.match(/^3-/);
 
     });
 
     //--------------------------------------------------------------------------
 
-    it("should actually have deleted the existing document", function (done) {
+    it("should actually have deleted the existing document", function* () {
 
-      const getResult = db.get('testing123');
-
-      expectOnlyError(getResult, done,
-        (err) => {
-          expect(err.message).to.equal("HTTP Error 404: Not Found");
-        });
+      const err = yield db.get('testing123').shouldThrow();
+      expect(err.message).to.equal("HTTP Error 404: Not Found");
 
     });
 

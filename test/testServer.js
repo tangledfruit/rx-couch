@@ -1,94 +1,12 @@
 'use strict';
 
+require('co-mocha');
+require('rx-to-async-iterator');
+
 const Rx = require('rx');
-const rxCouch = require('../lib/server');
 const expect = require('chai').expect;
 const nock = require('nock');
-
-//------------------------------------------------------------------------------
-
-const expectOneResult = function (observable, done, match) {
-
-  var didSendData = false;
-  var failure;
-
-  observable.subscribe(
-
-    function (value) {
-      try {
-        if (didSendData && !failure)
-          failure = new Error("Unexpected second result: ", value);
-        else
-          match(value);
-      }
-      catch (err) {
-        failure = err;
-      }
-    },
-
-    function (err) {
-      done(err);
-    },
-
-    function () {
-      done(failure);
-    });
-
-};
-
-//------------------------------------------------------------------------------
-
-const expectNoResults = function (observable, done) {
-
-  var failure;
-
-  observable.subscribe(
-    function (value) {
-      if (!failure)
-        failure = new Error("Unexpected value: ", value);
-    },
-    function (err) {
-      done(err);
-    },
-    function () {
-      done(failure);
-    });
-
-};
-
-//------------------------------------------------------------------------------
-
-const expectOnlyError = function (observable, done, match) {
-
-  expect(match).to.be.a('function');
-
-  var didSendData = false;
-  var failure;
-
-  observable.subscribe(
-
-    function (value) {
-      if (!failure)
-        failure = new Error("onNext was called with value: ", value);
-    },
-
-    function (err) {
-      if (!failure) {
-        try {
-          match(err);
-        }
-        catch (err) {
-          failure = err;
-        }
-      }
-      done(failure);
-    },
-
-    function () {
-      done(new Error("onCompleted was called"));
-    });
-
-};
+const rxCouch = require('../lib/server');
 
 //------------------------------------------------------------------------------
 
@@ -150,18 +68,15 @@ describe("rx-couch", function () {
 
   describe(".allDatabases()", function () {
 
-    it("should return an Observable which yields a list of databases", function (done) {
+    it("should return an Observable which yields a list of databases", function* () {
 
-      const dbsResult = server.allDatabases();
+      const databases = yield server.allDatabases().shouldGenerateOneValue();
 
-      expectOneResult(dbsResult, done,
-        (databases) => {
-          expect(databases).to.be.an('array');
-          databases.forEach((dbName) => {
-            expect(dbName).to.be.a('string');
-          });
-          expect(databases).to.include('_users');
-        });
+      expect(databases).to.be.an('array');
+      databases.forEach((dbName) => {
+        expect(dbName).to.be.a('string');
+      });
+      expect(databases).to.include('_users');
 
     });
 
@@ -171,16 +86,16 @@ describe("rx-couch", function () {
 
   describe(".createDatabase()", function () {
 
-    it("should return an Observable which sends only onCompleted when done", function (done) {
-      expectNoResults(server.createDatabase('test-rx-couch'), done);
+    it("should return an Observable which sends only onCompleted when done", function* () {
+      yield server.createDatabase('test-rx-couch').shouldBeEmpty();
     });
 
-    it("should succeed even if the database already exists", function (done) {
-      expectNoResults(server.createDatabase('test-rx-couch'), done);
+    it("should succeed even if the database already exists", function* () {
+      yield server.createDatabase('test-rx-couch').shouldBeEmpty();
     });
 
-    it("should succeed even if the database already exists {failIfExists: false}", function (done) {
-      expectNoResults(server.createDatabase('test-rx-couch', {failIfExists: false}), done);
+    it("should succeed even if the database already exists {failIfExists: false}", function* () {
+      yield server.createDatabase('test-rx-couch').shouldBeEmpty();
     });
 
     it("should throw if database name is missing", function () {
@@ -192,7 +107,7 @@ describe("rx-couch", function () {
     });
 
     it("should throw if database name is illegal", function () {
-      expect(() => server.createDatabase('noCapitalLetters')).to.throw("rxCouch.createDatabase: illegal dbName");
+      expect(() => server.createDatabase('dontUppercaseMe')).to.throw("rxCouch.createDatabase: illegal dbName");
     });
 
     it("should throw if database name starts with underscore", function () {
@@ -209,44 +124,36 @@ describe("rx-couch", function () {
 
     //--------------------------------------------------------------------------
 
-    it("should actually create a new database", function (done) {
+    it("should actually create a new database", function* () {
 
-      const dbsAfterCreate = Rx.Observable.concat(
+      const dbsAfterCreate = yield (Rx.Observable.concat(
         server.createDatabase('test-rx-couch'),
-        server.allDatabases());
+        server.allDatabases())).shouldGenerateOneValue();
 
-      expectOneResult(dbsAfterCreate, done,
-        (databases) => {
-          expect(databases).to.be.an('array');
-          expect(databases).to.include('test-rx-couch');
-        });
+      expect(dbsAfterCreate).to.be.an('array');
+      expect(dbsAfterCreate).to.include('test-rx-couch');
 
     });
 
     //--------------------------------------------------------------------------
 
-    it("should signal an error if database already exists (but only if so requested)", function (done) {
+    it("should signal an error if database already exists (but only if so requested)", function* () {
 
-      const createWithFail = server.createDatabase('test-rx-couch', {failIfExists: true});
-
-      expectOnlyError(createWithFail, done, (err) => {
-        expect(err.message).to.equal("HTTP Error 412: Precondition Failed");
-      });
+      const err = yield server.createDatabase('test-rx-couch', {failIfExists: true}).shouldThrow();
+      expect(err.message).to.equal("HTTP Error 412: Precondition Failed");
 
     });
 
     //--------------------------------------------------------------------------
 
-    it("should send an onError message if server yields unexpected result", function (done) {
+    it("should send an onError message if server yields unexpected result", function* () {
 
       nock('http://localhost:5979')
         .put('/test-rx-couch')
         .reply(500);
 
-      expectOnlyError(new rxCouch('http://localhost:5979').createDatabase('test-rx-couch'), done,
-        (err) => {
-          expect(err.message).to.equal("HTTP Error 500: Internal Server Error");
-        });
+      const err = yield (new rxCouch('http://localhost:5979').createDatabase('test-rx-couch')).shouldThrow();
+      expect(err.message).to.equal("HTTP Error 500: Internal Server Error");
 
     });
 
@@ -258,12 +165,12 @@ describe("rx-couch", function () {
 
     nock.cleanAll();
 
-    it("should return an Observable which sends only onCompleted when done", function (done) {
-      expectNoResults(server.deleteDatabase('test-rx-couch'), done);
+    it("should return an Observable which sends only onCompleted when done", function* () {
+      yield server.deleteDatabase('test-rx-couch').shouldBeEmpty();
     });
 
-    it("should succeed even if the database doesn\'t already exist", function (done) {
-      expectNoResults(server.deleteDatabase('test-rx-couch'), done);
+    it("should succeed even if the database doesn't already exist", function* () {
+      yield server.deleteDatabase('test-rx-couch').shouldBeEmpty();
     });
 
     it("should throw if database name is missing", function () {
@@ -284,32 +191,27 @@ describe("rx-couch", function () {
 
     //--------------------------------------------------------------------------
 
-    it("should actually delete the existing database", function (done) {
+    it("should actually delete the existing database", function* () {
 
-      const dbsAfterDelete = Rx.Observable.concat(
+      const dbsAfterDelete = yield (Rx.Observable.concat(
         server.deleteDatabase('test-rx-couch'),
-        server.allDatabases());
+        server.allDatabases())).shouldGenerateOneValue();
 
-      expectOneResult(dbsAfterDelete, done,
-        (databases) => {
-          expect(databases).to.be.an('array');
-          expect(databases).to.not.include('test-rx-couch');
-        });
+      expect(dbsAfterDelete).to.be.an('array');
+      expect(dbsAfterDelete).to.not.include('test-rx-couch');
 
     });
 
     //--------------------------------------------------------------------------
 
-    it("should send an onError message if server yields unexpected result", function (done) {
+    it("should send an onError message if server yields unexpected result", function* () {
 
       nock('http://localhost:5979')
         .delete('/test-rx-couch')
         .reply(500);
 
-      expectOnlyError(new rxCouch('http://localhost:5979').deleteDatabase('test-rx-couch'), done,
-        (err) => {
-          expect(err.message).to.equal("HTTP Error 500: Internal Server Error");
-        });
+      const err = yield (new rxCouch('http://localhost:5979').deleteDatabase('test-rx-couch')).shouldThrow();
+      expect(err.message).to.equal("HTTP Error 500: Internal Server Error");
 
     });
 
