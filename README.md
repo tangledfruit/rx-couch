@@ -55,17 +55,22 @@ db.put({_id: "testing123", foo: "bar"})
   .subscribe((result) => console.log(result));
   // -> {"id": "testing123", ok: true, "rev": "1-(random)"}
 
-// Update an existing document.
+// Update an existing document, replacing existing value
 // http://docs.couchdb.org/en/latest/api/document/common.html#put--db-docid
 db.put({_id: "testing123", _rev: "1-existingRevId", foo: "baz"})
   .subscribe((result) => console.log(result));
   // -> {"id": "testing123", ok: true, "rev": "2-(random)"}
 
+// Update an existing document, merging new content into existing value.
+db.update({_id: "testing123", flip: true})
+    .subscribe((result) => console.log(result));
+    // -> {"id": "testing123", ok: true, "rev": "3-(random)"}
+
 // Get the current value of an existing document.
 // http://docs.couchdb.org/en/latest/api/document/common.html#get--db-docid
 db.get("testing123")
   .subscribe((result) => console.log(result));
-  // -> {"_id": "testing123", "_rev": "2-(random)", "foo": "baz"}
+  // -> {"_id": "testing123", "_rev": "3-(random)", "foo": "baz", "flip": true}
 
 // Get the value of an existing document with query options.
 // All options described under query parameters below are supported:
@@ -76,9 +81,9 @@ db.get("testing123", {rev: "1-existingRevId"})
 
 // Delete an existing document. Both arguments (doc ID and rev ID) are required.
 // http://docs.couchdb.org/en/latest/api/document/common.html#put--db-docid
-db.delete("testing123", "2-latestRevId")
+db.delete("testing123", "3-latestRevId")
   .subscribe((result) => console.log(result));
-  // -> {"id": "testing123", ok: true, "rev": "3-(random)"}
+  // -> {"id": "testing123", ok: true, "rev": "4-(random)"}
 ```
 
 If any HTTP errors occur, they will be reported via `onError` notification on
