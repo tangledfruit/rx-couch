@@ -84,7 +84,7 @@ db.get("testing123", {rev: "1-existingRevId"})
 // http://docs.couchdb.org/en/latest/api/database/bulk-api.html#get--db-_all_docs
 db.allDocs({startkey: "testing123"})
   .subscribe(result => console.log(result));
-  // -> {"offset": 0, "rows":{...}, "total_rows": 5}
+  // -> {"offset": 0, "rows": {...}, "total_rows": 5}
 
 // Delete an existing document. Both arguments (doc ID and rev ID) are required.
 // http://docs.couchdb.org/en/latest/api/document/common.html#put--db-docid
