@@ -8,83 +8,66 @@ const expect = require('chai').expect;
 const nock = require('nock');
 const rxCouch = require('../lib/server');
 
-//------------------------------------------------------------------------------
 
-describe("rx-couch", function () {
+describe("rx-couch", () => {
 
-  it("should be defined", function () {
-
+  it("should be defined", () => {
     expect(rxCouch).to.be.a('function');
-
   });
 
-  //----------------------------------------------------------------------------
 
-  it("should fail if called as a non-constructor", function () {
+  it("should fail if called as a non-constructor", () => {
 
-    expect(function () {
-      return rxCouch('http://localhost:5984');
+    expect(() => rxCouch('http://localhost:5984')).to.throw(/new rxCouch/);
         // WRONG: should be `new rxCouch(...)`!
-    }).to.throw(/new rxCouch/);
 
   });
 
-  //----------------------------------------------------------------------------
 
-  it("should fail for malformed URL", function () {
+  it("should fail for malformed URL", () => {
 
     const badIdea = function () {
       return new rxCouch("not a valid URL");
     };
 
-    expect(badIdea).to.throw(/CouchDB server must not contain a path or query string/);
+    expect(() => new rxCouch("not a valid URL")).
+      to.throw(/CouchDB server must not contain a path or query string/);
 
   });
 
-  //----------------------------------------------------------------------------
 
-  it("should fail for URL containing a database path", function () {
+  it("should fail for URL containing a database path", () => {
 
-    const badIdea = function () {
-      return new rxCouch('http://localhost:5984/some_db');
-    };
-
-    expect(badIdea).to.throw(/CouchDB server must not contain a path or query string/);
+    expect(() => new rxCouch('http://localhost:5984/some_db')).
+      to.throw(/CouchDB server must not contain a path or query string/);
 
   });
 
-  //----------------------------------------------------------------------------
 
   const server = new rxCouch();
     // Outside an 'it' scope since we reuse this through the rest of the file.
 
-  it("should return a server object", function () {
-
+  it("should return a server object", () => {
     expect(server).to.be.an('object');
-
   });
 
-  //----------------------------------------------------------------------------
 
-  describe(".allDatabases()", function () {
+  describe(".allDatabases()", () => {
 
     it("should return an Observable which yields a list of databases", function* () {
 
       const databases = yield server.allDatabases().shouldGenerateOneValue();
 
       expect(databases).to.be.an('array');
-      databases.forEach((dbName) => {
-        expect(dbName).to.be.a('string');
-      });
+      databases.forEach((dbName) => { expect(dbName).to.be.a('string'); });
       expect(databases).to.include('_users');
 
     });
 
   });
 
-  //----------------------------------------------------------------------------
 
-  describe(".createDatabase()", function () {
+  describe(".createDatabase()", () => {
 
     it("should return an Observable which sends only onCompleted when done", function* () {
       yield server.createDatabase('test-rx-couch').shouldBeEmpty();
@@ -98,31 +81,30 @@ describe("rx-couch", function () {
       yield server.createDatabase('test-rx-couch').shouldBeEmpty();
     });
 
-    it("should throw if database name is missing", function () {
+    it("should throw if database name is missing", () => {
       expect(() => server.createDatabase()).to.throw("rxCouch.createDatabase: dbName must be a string");
     });
 
-    it('should throw if database name is empty', function () {
+    it('should throw if database name is empty', () => {
       expect(() => server.createDatabase('')).to.throw("rxCouch.createDatabase: illegal dbName");
     });
 
-    it("should throw if database name is illegal", function () {
+    it("should throw if database name is illegal", () => {
       expect(() => server.createDatabase('dontUppercaseMe')).to.throw("rxCouch.createDatabase: illegal dbName");
     });
 
-    it("should throw if database name starts with underscore", function () {
+    it("should throw if database name starts with underscore", () => {
       expect(() => server.createDatabase('_users')).to.throw("rxCouch.createDatabase: illegal dbName");
     });
 
-    it('should throw if options is present, but not an object', function () {
+    it('should throw if options is present, but not an object', () => {
       expect(() => server.createDatabase('x', 42)).to.throw("rxCouch.createDatabase: options, if present, must be an object");
     });
 
-    it('should throw if options.failIfExists is present, but not a boolean', function () {
+    it('should throw if options.failIfExists is present, but not a boolean', () => {
       expect(() => server.createDatabase('x', {failIfExists: "bogus"})).to.throw("rxCouch.createDatabase: options.failIfExists, if present, must be a boolean");
     });
 
-    //--------------------------------------------------------------------------
 
     it("should actually create a new database", function* () {
 
@@ -135,7 +117,6 @@ describe("rx-couch", function () {
 
     });
 
-    //--------------------------------------------------------------------------
 
     it("should signal an error if database already exists (but only if so requested)", function* () {
 
@@ -144,7 +125,6 @@ describe("rx-couch", function () {
 
     });
 
-    //--------------------------------------------------------------------------
 
     it("should send an onError message if server yields unexpected result", function* () {
 
@@ -159,9 +139,8 @@ describe("rx-couch", function () {
 
   });
 
-  //----------------------------------------------------------------------------
 
-  describe(".deleteDatabase()", function () {
+  describe(".deleteDatabase()", () => {
 
     nock.cleanAll();
 
@@ -173,23 +152,22 @@ describe("rx-couch", function () {
       yield server.deleteDatabase('test-rx-couch').shouldBeEmpty();
     });
 
-    it("should throw if database name is missing", function () {
+    it("should throw if database name is missing", () => {
       expect(() => server.deleteDatabase()).to.throw("rxCouch.deleteDatabase: dbName must be a string");
     });
 
-    it("should throw if database name is empty", function () {
+    it("should throw if database name is empty", () => {
       expect(() => server.deleteDatabase('')).to.throw("rxCouch.deleteDatabase: illegal dbName");
     });
 
-    it("should throw if database name is illegal", function () {
+    it("should throw if database name is illegal", () => {
       expect(() => server.deleteDatabase('noCapitalLetters')).to.throw("rxCouch.deleteDatabase: illegal dbName");
     });
 
-    it("should throw if database name starts with underscore", function () {
+    it("should throw if database name starts with underscore", () => {
       expect(() => server.deleteDatabase('_users')).to.throw("rxCouch.deleteDatabase: illegal dbName");
     });
 
-    //--------------------------------------------------------------------------
 
     it("should actually delete the existing database", function* () {
 
@@ -202,7 +180,6 @@ describe("rx-couch", function () {
 
     });
 
-    //--------------------------------------------------------------------------
 
     it("should send an onError message if server yields unexpected result", function* () {
 

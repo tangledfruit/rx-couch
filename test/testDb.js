@@ -8,13 +8,11 @@ const expect = require('chai').expect;
 const nock = require('nock');
 const rxCouch = require('../lib/server');
 
-//------------------------------------------------------------------------------
 
-describe("rx-couch.db()", function () {
+describe("rx-couch.db()", () => {
 
   const server = new rxCouch('http://127.0.0.1:5984');
 
-  //----------------------------------------------------------------------------
 
   before("create test database", function* () {
 
@@ -29,7 +27,6 @@ describe("rx-couch.db()", function () {
 
   });
 
-  //----------------------------------------------------------------------------
 
   after("remove test database", function* () {
 
@@ -44,56 +41,52 @@ describe("rx-couch.db()", function () {
 
   });
 
-  //----------------------------------------------------------------------------
 
-  it("should be defined", function () {
+  it("should be defined", () => {
     expect(server).to.respondTo('db');
   });
 
-  it("should throw if database name is missing", function () {
+  it("should throw if database name is missing", () => {
     expect(() => server.db()).to.throw("rxCouch.db: dbName must be a string");
   });
 
-  it("should throw if database name is empty", function () {
+  it("should throw if database name is empty", () => {
     expect(() => server.db('')).to.throw("rxCouch.db: illegal dbName");
   });
 
-  it("should throw if database name is illegal", function () {
+  it("should throw if database name is illegal", () => {
     expect(() => server.db('noCapitalLetters')).to.throw("rxCouch.db: illegal dbName");
   });
 
-  it("should throw if database name is illegal", function () {
+  it("should throw if database name is illegal", () => {
     expect(() => server.db('_users')).to.throw("rxCouch.db: illegal dbName");
   });
 
-  //----------------------------------------------------------------------------
 
   const db = server.db('test-rx-couch-db');
     // Defined out of scope because we use it throughout this test suite.
 
-  it("should return an object", function () {
+  it("should return an object", () => {
     expect(db).to.be.an('object');
   });
 
-  //----------------------------------------------------------------------------
 
   var rev1, rev2;
 
-  describe(".put()", function () {
+  describe(".put()", () => {
 
-    it("should be defined", function () {
+    it("should be defined", () => {
       expect(db).to.respondTo('put');
     });
 
-    it("should throw if no document value is provided", function () {
+    it("should throw if no document value is provided", () => {
       expect(() => db.put()).to.throw("rxCouch.db.put: missing document value");
     });
 
-    it("should throw if an invalid document value is provided", function () {
+    it("should throw if an invalid document value is provided", () => {
       expect(() => db.put(42)).to.throw("rxCouch.db.put: invalid document value");
     });
 
-    //--------------------------------------------------------------------------
 
     it("should assign a document ID if no document ID is provided", function* () {
 
@@ -108,7 +101,6 @@ describe("rx-couch.db()", function () {
 
     });
 
-    //--------------------------------------------------------------------------
 
     it("should create a new document using specific ID if provided", function* () {
 
@@ -124,7 +116,6 @@ describe("rx-couch.db()", function () {
 
     });
 
-    //--------------------------------------------------------------------------
 
     it("should not alter the object that was provided to it", function* () {
 
@@ -139,7 +130,6 @@ describe("rx-couch.db()", function () {
 
     });
 
-    //--------------------------------------------------------------------------
 
     it("should update an existing document when _id and _rev are provided", function* () {
 
@@ -153,7 +143,6 @@ describe("rx-couch.db()", function () {
 
     });
 
-    //--------------------------------------------------------------------------
 
     it("should fail when _id matches an existing document but no _rev is provided", function* () {
 
@@ -162,7 +151,6 @@ describe("rx-couch.db()", function () {
 
     });
 
-    //--------------------------------------------------------------------------
 
     it("should fail when _id matches an existing document but incorrect _rev is provided", function* () {
 
@@ -173,25 +161,23 @@ describe("rx-couch.db()", function () {
 
   });
 
-  //----------------------------------------------------------------------------
 
-  describe(".get()", function () {
+  describe(".get()", () => {
 
     // http://docs.couchdb.org/en/latest/api/document/common.html#get--db-docid
 
-    it("should be defined", function () {
+    it("should be defined", () => {
       expect(db).to.respondTo('get');
     });
 
-    it("should throw if no document ID is provided", function () {
+    it("should throw if no document ID is provided", () => {
       expect(() => db.get()).to.throw("rxCouch.db.get: missing document ID");
     });
 
-    it("should throw if an invalid document ID is provided", function () {
+    it("should throw if an invalid document ID is provided", () => {
       expect(() => db.get(42)).to.throw("rxCouch.db.get: invalid document ID");
     });
 
-    //--------------------------------------------------------------------------
 
     it("should retrieve a document's current value if no options are provided", function* () {
 
@@ -204,7 +190,6 @@ describe("rx-couch.db()", function () {
 
     });
 
-    //--------------------------------------------------------------------------
 
     it("should pass through options when provided", function* () {
 
@@ -217,7 +202,6 @@ describe("rx-couch.db()", function () {
 
     });
 
-    //--------------------------------------------------------------------------
 
     it("should fail when _id doesn't match an existing document", function* () {
 
@@ -228,31 +212,29 @@ describe("rx-couch.db()", function () {
 
   });
 
-  //----------------------------------------------------------------------------
 
-  describe(".delete()", function () {
+  describe(".delete()", () => {
 
-    it("should be defined", function () {
+    it("should be defined", () => {
       expect(db).to.respondTo('delete');
     });
 
-    it("should throw if no document ID is provided", function () {
+    it("should throw if no document ID is provided", () => {
       expect(() => db.delete()).to.throw("rxCouch.db.delete: missing document ID");
     });
 
-    it("should throw if an invalid document ID is provided", function () {
+    it("should throw if an invalid document ID is provided", () => {
       expect(() => db.delete(42)).to.throw("rxCouch.db.delete: invalid document ID");
     });
 
-    it("should throw if no revision ID is provided", function () {
+    it("should throw if no revision ID is provided", () => {
       expect(() => db.delete('testing123')).to.throw("rxCouch.db.delete: missing revision ID");
     });
 
-    it("should throw if an invalid revision ID is provided", function () {
+    it("should throw if an invalid revision ID is provided", () => {
       expect(() => db.delete('testing123', 42)).to.throw("rxCouch.db.delete: invalid revision ID");
     });
 
-    //--------------------------------------------------------------------------
 
     it("should fail when _id matches an existing document but incorrect _rev is provided", function* () {
 
@@ -261,7 +243,6 @@ describe("rx-couch.db()", function () {
 
     });
 
-    //--------------------------------------------------------------------------
 
     it("should delete an existing document when correct _id and _rev are provided", function* () {
 
@@ -273,7 +254,6 @@ describe("rx-couch.db()", function () {
 
     });
 
-    //--------------------------------------------------------------------------
 
     it("should actually have deleted the existing document", function* () {
 
