@@ -7,6 +7,7 @@ const Rx = require('rx');
 const expect = require('chai').expect;
 const nock = require('nock');
 const rxCouch = require('../lib/server');
+const shallowCopy = require('shallow-copy');
 
 
 describe("rx-couch.db()", () => {
@@ -71,6 +72,7 @@ describe("rx-couch.db()", () => {
   });
 
 
+  let randomDocId;
   let rev1, rev2;
 
   describe(".put()", () => {
@@ -98,6 +100,8 @@ describe("rx-couch.db()", () => {
       expect(putResponse.id).to.be.a('string');
       expect(putResponse.ok).to.equal(true);
       expect(putResponse.rev).to.be.a('string');
+
+      randomDocId = putResponse.id;
 
     });
 
@@ -307,6 +311,135 @@ describe("rx-couch.db()", () => {
         "_id": "update-test",
         "_rev": rev2,
         foo: "baz"
+      });
+
+    });
+
+  });
+
+
+  describe(".allDocs()", () => {
+
+    it("should be defined", () => {
+      expect(db).to.respondTo('delete');
+    });
+
+
+    it("should return summary information about all documents with no query options", function* () {
+
+      const allDocsResult = yield db.allDocs().shouldGenerateOneValue();
+
+      const simplifiedDocsResult = shallowCopy(allDocsResult);
+      simplifiedDocsResult.rows = allDocsResult.rows.map(row => {
+        if (typeof(row) !== 'object') {
+          return row;
+        } else {
+          let rowCopy = shallowCopy(row);
+          if (typeof(row.value) === 'object' && typeof(row.value.rev) === 'string') {
+            rowCopy.value.rev = 'rev';
+          }
+          return rowCopy;
+        }
+      });
+
+      expect(simplifiedDocsResult).to.deep.equal({
+          offset: 0,
+          rows: [
+            {
+              id: randomDocId,
+              key: randomDocId,
+              value: {
+                rev: "rev"
+              }
+            },
+            {
+              id: "testing123",
+              key: "testing123",
+              value: {
+                rev: "rev"
+              }
+            },
+            {
+              id: "testing234",
+              key: "testing234",
+              value: {
+                rev: "rev"
+              }
+            },
+            {
+              id: "update-test",
+              key: "update-test",
+              value: {
+                rev: "rev"
+              }
+            },
+            {
+              id: "update-test-2",
+              key: "update-test-2",
+              value: {
+                rev: "rev"
+              }
+            }
+          ],
+          total_rows: 5
+      });
+
+    });
+
+
+    it("should return full document values for some documents with appropriate query parameters", function* () {
+
+      const allDocsResult = yield db.allDocs({
+        startkey: "testing123",
+        endkey: "testing234",
+        include_docs: true
+      }).shouldGenerateOneValue();
+
+      const simplifiedDocsResult = shallowCopy(allDocsResult);
+      simplifiedDocsResult.rows = allDocsResult.rows.map(row => {
+        if (typeof(row) !== 'object') {
+          return row;
+        } else {
+          let rowCopy = shallowCopy(row);
+          if (typeof(row.doc) === 'object' && typeof(row.doc._rev) === 'string') {
+            rowCopy.doc._rev = 'rev';
+          }
+          if (typeof(row.value) === 'object' && typeof(row.value.rev) === 'string') {
+            rowCopy.value.rev = 'rev';
+          }
+          return rowCopy;
+        }
+      });
+
+      expect(simplifiedDocsResult).to.deep.equal({
+          offset: 1,
+          rows: [
+            {
+              doc: {
+                _id: "testing123",
+                _rev: "rev",
+                foo: "baz"
+              },
+              id: "testing123",
+              key: "testing123",
+              value: {
+                rev: "rev"
+              }
+            },
+            {
+              doc: {
+                _id: "testing234",
+                _rev: "rev",
+                foo: "bar"
+              },
+              id: "testing234",
+              key: "testing234",
+              value: {
+                rev: "rev"
+              }
+            }
+          ],
+          total_rows: 5
       });
 
     });
