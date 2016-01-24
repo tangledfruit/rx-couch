@@ -71,7 +71,7 @@ describe("rx-couch.db()", () => {
   });
 
 
-  var rev1, rev2;
+  let rev1, rev2;
 
   describe(".put()", () => {
 
@@ -121,7 +121,7 @@ describe("rx-couch.db()", () => {
 
       // http://docs.couchdb.org/en/latest/api/document/common.html#put--db-docid
 
-      var putObject = {"_id": "testing234", foo: "bar"};
+      let putObject = {"_id": "testing234", foo: "bar"};
       const putResponse = yield db.put(putObject).shouldGenerateOneValue();
 
       expect(putResponse).to.be.an('object');
