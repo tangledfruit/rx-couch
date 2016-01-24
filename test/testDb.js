@@ -213,6 +213,107 @@ describe("rx-couch.db()", () => {
   });
 
 
+  describe(".update()", () => {
+
+    it("should be defined", () => {
+      expect(db).to.respondTo('update');
+    });
+
+    it("should throw if no document value is provided", () => {
+      expect(() => db.update()).to.throw("rxCouch.db.update: missing document value");
+    });
+
+    it("should throw if an invalid document value is provided", () => {
+      expect(() => db.update(42)).to.throw("rxCouch.db.update: invalid document value");
+    });
+
+    it("should throw if no document ID is provided", () => {
+      expect(() => db.update({})).to.throw("rxCouch.db.update: _id is missing");
+    });
+
+    it("should throw if a revision ID is provided", () => {
+      expect(() => db.update({"_id": "blah", "_rev": "42-bogus"}))
+        .to.throw("rxCouch.db.update: _rev is not allowed");
+    });
+
+
+    let initialRev;
+
+    it("should create a new document if no existing document exists", function* () {
+
+      const updateResponse = yield db.update({"_id": "update-test", foo: "bar"}).shouldGenerateOneValue();
+
+      expect(updateResponse).to.be.an('object');
+      expect(updateResponse.id).to.equal("update-test");
+      expect(updateResponse.ok).to.equal(true);
+      expect(updateResponse.rev).to.match(/^1-/);
+      initialRev = updateResponse.rev;
+
+      const getResponse = yield db.get("update-test").shouldGenerateOneValue();
+      expect(getResponse).to.deep.equal({
+        "_id": "update-test",
+        "_rev": initialRev,
+        foo: "bar"
+      });
+
+    });
+
+
+    it("should not alter the object that was provided to it", function* () {
+
+      let updateObject = {"_id": "update-test-2", foo: "bar"};
+      const updateResponse = yield db.update(updateObject).shouldGenerateOneValue();
+
+      expect(updateResponse).to.be.an('object');
+      expect(updateResponse.id).to.equal("update-test-2");
+      expect(updateObject).to.deep.equal({"_id": "update-test-2", foo: "bar"});
+
+    });
+
+
+    it("should not create a new revision if nothing changed", function* () {
+
+      const updateResponse = yield db.update({"_id": "update-test", foo: "bar"}).shouldGenerateOneValue();
+
+      expect(updateResponse).to.deep.equal({
+        id: "update-test",
+        ok: true,
+        rev: initialRev,
+        noop: true
+      });
+
+      const value = yield db.get("update-test").shouldGenerateOneValue();
+      expect(value).to.deep.equal({
+        "_id": "update-test",
+        "_rev": initialRev,
+        foo: "bar"
+      });
+
+    });
+
+
+    it("should update an existing document when new content is provided", function* () {
+
+      const updateResponse = yield db.update({"_id": "update-test", foo: "baz"}).shouldGenerateOneValue();
+
+      expect(updateResponse).to.be.an('object');
+      expect(updateResponse.id).to.equal("update-test");
+      expect(updateResponse.ok).to.equal(true);
+      expect(updateResponse.rev).to.be.match(/^2-/);
+      let rev2 = updateResponse.rev;
+
+      const value = yield db.get("update-test").shouldGenerateOneValue();
+      expect(value).to.deep.equal({
+        "_id": "update-test",
+        "_rev": rev2,
+        foo: "baz"
+      });
+
+    });
+
+  });
+
+
   describe(".delete()", () => {
 
     it("should be defined", () => {
