@@ -318,6 +318,108 @@ describe("rx-couch.db()", () => {
   });
 
 
+  describe(".replace()", () => {
+
+    it("should be defined", () => {
+      expect(db).to.respondTo('replace');
+    });
+
+    it("should throw if no document value is provided", () => {
+      expect(() => db.replace()).to.throw("rxCouch.db.replace: missing document value");
+    });
+
+    it("should throw if an invalid document value is provided", () => {
+      expect(() => db.replace(42)).to.throw("rxCouch.db.replace: invalid document value");
+    });
+
+    it("should throw if no document ID is provided", () => {
+      expect(() => db.replace({})).to.throw("rxCouch.db.replace: _id is missing");
+    });
+
+    it("should throw if a revision ID is provided", () => {
+      expect(() => db.replace({"_id": "blah", "_rev": "42-bogus"}))
+        .to.throw("rxCouch.db.replace: _rev is not allowed");
+    });
+
+
+    let initialRev;
+
+    it("should create a new document if no existing document exists", function* () {
+
+      const replaceResponse = yield db.replace({"_id": "replace-test", foo: "bar"}).shouldGenerateOneValue();
+
+      expect(replaceResponse).to.be.an('object');
+      expect(replaceResponse.id).to.equal("replace-test");
+      expect(replaceResponse.ok).to.equal(true);
+      expect(replaceResponse.rev).to.match(/^1-/);
+      initialRev = replaceResponse.rev;
+
+      const getResponse = yield db.get("replace-test").shouldGenerateOneValue();
+      expect(getResponse).to.deep.equal({
+        "_id": "replace-test",
+        "_rev": initialRev,
+        foo: "bar"
+      });
+
+    });
+
+
+    it("should not alter the object that was provided to it", function* () {
+
+      let replaceObject = {"_id": "replace-test-2", foo: "bar"};
+      const replaceResponse = yield db.replace(replaceObject).shouldGenerateOneValue();
+
+      expect(replaceResponse).to.be.an('object');
+      expect(replaceResponse.id).to.equal("replace-test-2");
+      expect(replaceObject).to.deep.equal({"_id": "replace-test-2", foo: "bar"});
+
+    });
+
+
+    it("should not create a new revision if nothing changed", function* () {
+
+      const replaceResponse = yield db.replace({"_id": "replace-test", foo: "bar"}).shouldGenerateOneValue();
+
+      expect(replaceResponse).to.deep.equal({
+        id: "replace-test",
+        ok: true,
+        rev: initialRev,
+        noop: true
+      });
+
+      const value = yield db.get("replace-test").shouldGenerateOneValue();
+      expect(value).to.deep.equal({
+        "_id": "replace-test",
+        "_rev": initialRev,
+        foo: "bar"
+      });
+
+    });
+
+
+    it("should replace an existing document when new content is provided", function* () {
+
+      const replaceResponse = yield db.replace({"_id": "replace-test", flip: "baz"}).shouldGenerateOneValue();
+
+      expect(replaceResponse).to.be.an('object');
+      expect(replaceResponse.id).to.equal("replace-test");
+      expect(replaceResponse.ok).to.equal(true);
+      expect(replaceResponse.rev).to.be.match(/^2-/);
+      let rev2 = replaceResponse.rev;
+
+      const value = yield db.get("replace-test").shouldGenerateOneValue();
+      expect(value).to.deep.equal({
+        "_id": "replace-test",
+        "_rev": rev2,
+        flip: "baz"
+        // foo should be removed
+      });
+
+    });
+
+  });
+
+
   describe(".allDocs()", () => {
 
     it("should be defined", () => {
@@ -353,6 +455,20 @@ describe("rx-couch.db()", () => {
               }
             },
             {
+              id: "replace-test",
+              key: "replace-test",
+              value: {
+                rev: "rev"
+              }
+            },
+            {
+              id: "replace-test-2",
+              key: "replace-test-2",
+              value: {
+                rev: "rev"
+              }
+            },
+            {
               id: "testing123",
               key: "testing123",
               value: {
@@ -381,7 +497,7 @@ describe("rx-couch.db()", () => {
               }
             }
           ],
-          total_rows: 5
+          total_rows: 7
       });
 
     });
@@ -412,7 +528,7 @@ describe("rx-couch.db()", () => {
       });
 
       expect(simplifiedDocsResult).to.deep.equal({
-          offset: 1,
+          offset: 3,
           rows: [
             {
               doc: {
@@ -439,7 +555,7 @@ describe("rx-couch.db()", () => {
               }
             }
           ],
-          total_rows: 5
+          total_rows: 7
       });
 
     });
