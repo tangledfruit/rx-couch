@@ -66,6 +66,12 @@ db.update({_id: "testing123", flip: true})
     .subscribe(result => console.log(result));
     // -> {"id": "testing123", ok: true, "rev": "3-(random)"}
 
+// Update an existing document, replacing existing value, but avoiding
+// write if new value exactly matches existing.
+db.replace({_id: "testing123", flip: true})
+    .subscribe(result => console.log(result));
+    // -> {"id": "testing123", ok: true, "rev": "3-(random)", noop: true}
+
 // Get the current value of an existing document.
 // http://docs.couchdb.org/en/latest/api/document/common.html#get--db-docid
 db.get("testing123")
