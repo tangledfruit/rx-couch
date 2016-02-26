@@ -37,7 +37,7 @@
     "rx-to-async-iterator": "1.1.0"
   },
   "peerDependencies": {
-    "rx:": ">=4.0.7 <5"
+    "rx": ">=4.0.7 <5"
   },
   "dependencies": {
     "deep-eql": "0.1.3",
