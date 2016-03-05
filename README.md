@@ -7,11 +7,8 @@ RxJS-flavored APIs for CouchDB
 ### NPM
 
 ```sh
-npm install --save rx
 npm install --save rx-couch
 ```
-
-(Note: You need to explicitly declare rx as a dependency of your project.)
 
 ## Usage
 
