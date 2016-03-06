@@ -140,6 +140,49 @@ describe("rx-couch", () => {
   });
 
 
+  describe(".replicate()", () => {
+
+    nock.cleanAll();
+
+    const srcDb = server.db('test-rx-couch-clone-source');
+
+    before("create test databases", function* () {
+      yield server.createDatabase('test-rx-couch-clone-source').shouldBeEmpty();
+      yield server.createDatabase('test-rx-couch-clone-target').shouldBeEmpty();
+
+      let putObject = {"_id": "testing234", foo: "bar"};
+      yield srcDb.put(putObject).shouldGenerateOneValue();
+    });
+
+    after("destroy test databases", function* () {
+      yield server.deleteDatabase('test-rx-couch-clone-source').shouldBeEmpty();
+      yield server.deleteDatabase('test-rx-couch-clone-target').shouldBeEmpty();
+    });
+
+    it("should throw if options is missing", () => {
+      expect(() => server.replicate()).to.throw("rxCouch.replicate: options must be an object");
+    });
+
+    it("should throw if options is not an object", () => {
+      expect(() => server.replicate("blah")).to.throw("rxCouch.replicate: options must be an object");
+    });
+
+
+    it("should return an Observable with status information", function* () {
+
+      const replResult = yield server.replicate({
+        source: 'test-rx-couch-clone-source',
+        target: 'test-rx-couch-clone-target'
+      }).shouldGenerateOneValue();
+
+      expect(replResult.ok).to.equal(true);
+      expect(replResult.history).to.be.an('array');
+
+    });
+
+  });
+
+
   describe(".deleteDatabase()", () => {
 
     nock.cleanAll();

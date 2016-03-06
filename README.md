@@ -39,6 +39,12 @@ server.createDatabase('test-rx-couch', {failIfExists: true})
 server.deleteDatabase('some-other-database')
   .subscribeOnCompleted(); // fires when done
 
+// Replicate a database.
+// http://docs.couchdb.org/en/latest/api/server/common.html#replicate
+server.replicate({source: 'db1', target: 'db2'})
+  .subscribe(status => console.log(status));
+  // -> {"history": [...], "ok":true, etc...}
+
 // Create a database object to interact with a single database on the server.
 // WARNING: Does not create the database. See .createDatabase above.
 const db = server.db('test-rx-couch');
