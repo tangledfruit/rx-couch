@@ -210,7 +210,7 @@ describe("rx-couch.db()", () => {
     it("should fail when _id doesn't match an existing document", function* () {
 
       const err = yield db.get("testing432").shouldThrow();
-      expect(err.message).to.equal("HTTP Error 404: Not Found");
+      expect(err.message).to.equal("HTTP Error 404: Object Not Found");
 
     });
 
@@ -608,7 +608,7 @@ describe("rx-couch.db()", () => {
     it("should actually have deleted the existing document", function* () {
 
       const err = yield db.get('testing123').shouldThrow();
-      expect(err.message).to.equal("HTTP Error 404: Not Found");
+      expect(err.message).to.equal("HTTP Error 404: Object Not Found");
 
     });
 
