@@ -33,7 +33,7 @@
     "lintspaces-cli": "0.1.1",
     "mocha": "2.4.5",
     "nock": "7.7.0",
-    "rx-to-async-iterator": "1.1.4"
+    "rx-to-async-iterator": "1.1.5"
   },
   "dependencies": {
     "deep-eql": "0.1.3",
