@@ -514,4 +514,45 @@ describe('rx-couch.db()', () => {
       expect(err.message).to.equal('HTTP Error 404: Object Not Found');
     });
   });
+
+  describe('.replicateFrom()', () => {
+    const srcDb = server.db('test-rx-couch-clone-source');
+
+    before('create test databases', function *() {
+      yield server.createDatabase('test-rx-couch-clone-source').shouldBeEmpty();
+      yield server.createDatabase('test-rx-couch-clone-target').shouldBeEmpty();
+      let putObject = {_id: 'testing234', foo: 'bar'};
+      yield srcDb.put(putObject).shouldGenerateOneValue();
+    });
+
+    after('destroy test databases', function *() {
+      yield server.deleteDatabase('test-rx-couch-clone-source').shouldBeEmpty();
+      yield server.deleteDatabase('test-rx-couch-clone-target').shouldBeEmpty();
+    });
+
+    it('should throw if options is missing', () => {
+      expect(() => srcDb.replicateFrom()).to.throw('rxCouch.db.replicateFrom: options must be an object');
+    });
+
+    it('should throw if options is not an object', () => {
+      expect(() => srcDb.replicateFrom('blah')).to.throw('rxCouch.db.replicateFrom: options must be an object');
+    });
+
+    it('should throw if options contains a "target" entry', () => {
+      expect(() => srcDb.replicateFrom({
+        source: 'test-rx-couch-clone-source',
+        target: 'test-rx-couch-clone-target'
+      })).to.throw('rxCouch.db.replicateFrom: options.target must not be specified');
+    });
+
+    it('should return an Observable with status information', function *() {
+      const replResult = yield srcDb.replicateFrom({
+        source: 'test-rx-couch-clone-source'
+      }).shouldGenerateOneValue();
+
+      expect(replResult).to.be.an('object');
+      expect(replResult.ok).to.equal(true);
+      expect(replResult.history).to.be.an('array');
+    });
+  });
 });
