@@ -136,6 +136,7 @@ describe('rx-couch', () => {
         target: 'test-rx-couch-clone-target'
       }).shouldGenerateOneValue();
 
+      expect(replResult).to.be.an('object');
       expect(replResult.ok).to.equal(true);
       expect(replResult.history).to.be.an('array');
     });
