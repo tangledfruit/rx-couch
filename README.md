@@ -104,6 +104,12 @@ db.delete('testing123', '3-latestRevId')
   .subscribe(result => console.log(result));
   // -> {id: 'testing123', ok: true, rev: '4-(random)'}
 
+// Replicate from another database into this database.
+// http://docs.couchdb.org/en/latest/api/server/common.html#replicate
+db.replicateFrom({source: 'db1'})
+  .subscribe(status => console.log(status));
+  // -> {history: [...], ok: true, etc...}
+
 ```
 
 If any HTTP errors occur, they will be reported via `onError` notification on
