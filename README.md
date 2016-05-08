@@ -110,6 +110,28 @@ db.replicateFrom({source: 'db1'})
   .subscribe(status => console.log(status));
   // -> {history: [...], ok: true, etc...}
 
+// Monitor changes to the database.
+// http://docs.couchdb.org/en/latest/api/database/changes.html
+db.changes({include_docs: true})
+  .subscribe(result => console.log(result));
+  // -> any number of result objects of the form (one per document):
+  // {
+  //   "changes": [
+  //     {
+  //       "rev": "2-7051cbe5c8faecd085a3fa619e6e6337"
+  //     }
+  //   ],
+  //   "id": "6478c2ae800dfc387396d14e1fc39626",
+  //   "seq": 6
+  // }
+  //
+  // The exact form of the responses will vary depending on the
+  // options specified.
+  //
+  // If feed: "longpoll" appears in the options object, the changes
+  // feed is monitored continuously until the subscription is dropped.
+  // It is an error to use feed: "continuous".
+
 ```
 
 If any HTTP errors occur, they will be reported via `onError` notification on
