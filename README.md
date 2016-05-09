@@ -91,6 +91,17 @@ db.get('testing123', {rev: '1-existingRevId'})
   .subscribe(result => console.log(result));
   // -> {_id: 'testing123', _rev: '1-(random)', foo: 'baz'}
 
+// Observe the value of an existing document over time.
+// Returns the current document value soon after the call is issued
+// and monitors the value until the subscription is terminated.
+// Use this sparingly; having many of these open at once could lead to
+// unacceptable server load.
+
+db.observe('testing123')
+  .subscribe(result => console.log(result));
+  // -> one or more results of the form
+  // {_id: 'testing123', _rev: '1-(random)', foo: 'baz'}
+
 // Get information about several documents at once.
 // All options described under query parameters below are supported:
 // http://docs.couchdb.org/en/latest/api/database/bulk-api.html#get--db-_all_docs

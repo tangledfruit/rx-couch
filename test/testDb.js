@@ -801,4 +801,84 @@ describe('rx-couch.db()', () => {
       iter.unsubscribe();
     });
   });
+
+  describe('.observe()', () => {
+    it('should throw if id is missing', () => {
+      expect(() => db.observe()).to.throw('rxCouch.db.observe: missing document ID');
+    });
+
+    it('should throw if id is not a string', () => {
+      expect(() => db.observe(42)).to.throw('rxCouch.db.observe: invalid document ID');
+    });
+
+    it('should send the current document value immediately if it exists, then update it with new value when it exists', function *() {
+      const iter = db.observe('testing234')
+        .map(doc => { delete doc._rev; return doc; })
+        .toAsyncIterator();
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        _id: 'testing234',
+        bop: 'blip',
+        foo: 'blam'
+      });
+
+      yield db.update({_id: 'testing234', phone: 'ring'}).shouldGenerateOneValue();
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        _id: 'testing234',
+        bop: 'blip',
+        foo: 'blam',
+        phone: 'ring'
+      });
+
+      iter.unsubscribe();
+    });
+
+    it('should return a placeholder if the document does not exist, then replace it with the correct value when it does exist', function *() {
+      const iter = db.observe('testing987')
+        .map(doc => { delete doc._rev; return doc; })
+        .toAsyncIterator();
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        _id: 'testing987',
+        _empty: true
+      });
+
+      yield db.update({_id: 'testing987', phone: 'ring'}).shouldGenerateOneValue();
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        _id: 'testing987',
+        phone: 'ring'
+      });
+
+      iter.unsubscribe();
+    });
+
+    it('should return a placeholder if the document is deleted', function *() {
+      let revId;
+
+      const iter = db.observe('testing987')
+        .map(doc => { revId = doc._rev; delete doc._rev; return doc; })
+        .toAsyncIterator();
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        _id: 'testing987',
+        phone: 'ring'
+      });
+
+      yield db.delete('testing987', revId).shouldGenerateOneValue();
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        _id: 'testing987',
+        _deleted: true
+      });
+
+      yield db.update({_id: 'testing987', phone: 'again?'}).shouldGenerateOneValue();
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        _id: 'testing987',
+        phone: 'again?'
+      });
+    });
+  });
 });
