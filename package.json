@@ -30,7 +30,7 @@
     "istanbul": "^0.4.3",
     "mocha": "^2.4.5",
     "nock": "^8.0.0",
-    "rx-to-async-iterator": "^1.1.8",
+    "rx-to-async-iterator": "^1.2.0",
     "semistandard": "^7.0.5"
   },
   "dependencies": {

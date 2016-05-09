@@ -555,4 +555,250 @@ describe('rx-couch.db()', () => {
       expect(replResult.history).to.be.an('array');
     });
   });
+
+  describe('.changes()', () => {
+    it('should throw if options is not an object', () => {
+      expect(() => db.changes('blah')).to.throw('rxCouch.db.changes: options must be an object');
+    });
+
+    it('should throw if options.feed === "continuous"', () => {
+      expect(() => db.changes({feed: 'continuous'})).to.throw('rxCouch.db.changes: feed: "continuous" not supported');
+    });
+
+    it('should return summary information about all documents with no query options', function *() {
+      const iter = db.changes()
+        .skip(1)
+        .map(result => {
+          result.changes = 'changes suppressed';
+          return result;
+        })
+        .toAsyncIterator();
+        // Previous tests add one document with random ID.
+        // Skip that since it will be hard to match.
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        changes: 'changes suppressed',
+        id: 'testing234',
+        seq: 3
+      });
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        changes: 'changes suppressed',
+        id: 'update-test-2',
+        seq: 6
+      });
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        changes: 'changes suppressed',
+        id: 'update-test',
+        seq: 7
+      });
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        changes: 'changes suppressed',
+        id: 'replace-test-2',
+        seq: 9
+      });
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        changes: 'changes suppressed',
+        id: 'replace-test',
+        seq: 10
+      });
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        changes: 'changes suppressed',
+        deleted: true,
+        id: 'testing123',
+        seq: 11
+      });
+
+      yield iter.shouldComplete();
+    });
+
+    it('should return full document values for some documents with appropriate query parameters', function *() {
+      const iter = db.changes({
+        doc_ids: ['testing123', 'testing234'],
+        filter: '_doc_ids',
+        include_docs: true
+      })
+        .map(result => {
+          result.changes = 'changes suppressed';
+          result.doc._rev = 'rev ID suppressed';
+          return result;
+        })
+        .toAsyncIterator();
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        changes: 'changes suppressed',
+        doc: {
+          _id: 'testing234',
+          _rev: 'rev ID suppressed',
+          foo: 'bar'
+        },
+        id: 'testing234',
+        seq: 3
+      });
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        changes: 'changes suppressed',
+        deleted: true,
+        doc: {
+          _deleted: true,
+          _id: 'testing123',
+          _rev: 'rev ID suppressed'
+        },
+        id: 'testing123',
+        seq: 11
+      });
+
+      yield iter.shouldComplete();
+    });
+
+    it('should continuously monitor the database if feed: longpoll is used', function *() {
+      const iter = db.changes({
+        doc_ids: ['testing234'],
+        feed: 'longpoll',
+        filter: '_doc_ids',
+        include_docs: true
+      })
+        .map(result => {
+          result.changes = 'changes suppressed';
+          result.doc._rev = 'rev ID suppressed';
+          return result;
+        })
+        .toAsyncIterator();
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        changes: 'changes suppressed',
+        doc: {
+          _id: 'testing234',
+          _rev: 'rev ID suppressed',
+          foo: 'bar'
+        },
+        id: 'testing234',
+        seq: 3
+      });
+
+      yield db.update({_id: 'testing234', foo: 'blah'}).shouldGenerateOneValue();
+        // Ignore result: Assume other tests have verified behavior of update method.
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        changes: 'changes suppressed',
+        doc: {
+          _id: 'testing234',
+          _rev: 'rev ID suppressed',
+          foo: 'blah'
+        },
+        id: 'testing234',
+        seq: 12
+      });
+
+      yield db.update({_id: 'testing123', count: 38}).shouldGenerateOneValue();
+        // Should generate no updates: We're not watching this document.
+
+      yield db.update({_id: 'testing234', bop: 'blip'}).shouldGenerateOneValue();
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        changes: 'changes suppressed',
+        doc: {
+          _id: 'testing234',
+          _rev: 'rev ID suppressed',
+          bop: 'blip',
+          foo: 'blah'
+        },
+        id: 'testing234',
+        seq: 14
+      });
+
+      iter.unsubscribe();
+    });
+
+    it('should stop monitoring the database when unsubscribed', function *() {
+      const iter = db.changes({
+        doc_ids: ['testing234'],
+        feed: 'longpoll',
+        filter: '_doc_ids',
+        include_docs: true,
+        timeout: 100
+      })
+        .map(result => {
+          result.changes = 'changes suppressed';
+          result.doc._rev = 'rev ID suppressed';
+          return result;
+        })
+        .toAsyncIterator();
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        changes: 'changes suppressed',
+        doc: {
+          _id: 'testing234',
+          _rev: 'rev ID suppressed',
+          bop: 'blip',
+          foo: 'blah'
+        },
+        id: 'testing234',
+        seq: 14
+      });
+
+      const fetchCountAtUnsubscribe = db._changesFetchCount;
+        // Yes, this is hacky groping of the db object's internals.
+        // Do not count on this member variable remaining present.
+
+      iter.unsubscribe();
+
+      yield Rx.Observable.timer(400).shouldGenerateOneValue();
+        // Sleep through at least one (no-op) fetch cycle.
+
+      expect(db._changesFetchCount).to.equal(fetchCountAtUnsubscribe);
+    });
+
+    it('should continue to monitor changes even if a timeout occurs', function *() {
+      const iter = db.changes({
+        doc_ids: ['testing234'],
+        feed: 'longpoll',
+        filter: '_doc_ids',
+        include_docs: true,
+        timeout: 500
+      })
+        .map(result => {
+          result.changes = 'changes suppressed';
+          result.doc._rev = 'rev ID suppressed';
+          return result;
+        })
+        .toAsyncIterator();
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        changes: 'changes suppressed',
+        doc: {
+          _id: 'testing234',
+          _rev: 'rev ID suppressed',
+          bop: 'blip',
+          foo: 'blah'
+        },
+        id: 'testing234',
+        seq: 14
+      });
+
+      yield Rx.Observable.timer(750).shouldGenerateOneValue();
+        // Sleep past the 500ms timeout specified above.
+
+      yield db.update({_id: 'testing234', foo: 'blam'}).shouldGenerateOneValue();
+        // Ignore result: Assume other tests have verified behavior of update method.
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        changes: 'changes suppressed',
+        doc: {
+          _id: 'testing234',
+          _rev: 'rev ID suppressed',
+          bop: 'blip',
+          foo: 'blam'
+        },
+        id: 'testing234',
+        seq: 15
+      });
+
+      iter.unsubscribe();
+    });
+  });
 });
