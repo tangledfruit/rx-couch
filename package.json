@@ -31,7 +31,7 @@
     "mocha": "^2.4.5",
     "nock": "^8.0.0",
     "rx-to-async-iterator": "^1.2.0",
-    "semistandard": "^7.0.5"
+    "semistandard": "^8.0.0"
   },
   "dependencies": {
     "deep-eql": "^0.1.3",
