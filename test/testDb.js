@@ -11,7 +11,7 @@ const shallowCopy = require('shallow-copy');
 describe('rx-couch.db()', () => {
   const server = new RxCouch('http://127.0.0.1:5984');
 
-  before('create test database', function *() {
+  before('create test database', function * () {
     this.timeout(5000);
 
     const dbsAfterCreate = yield (Rx.Observable.concat(
@@ -22,7 +22,7 @@ describe('rx-couch.db()', () => {
     expect(dbsAfterCreate).to.include('test-rx-couch-db');
   });
 
-  after('remove test database', function *() {
+  after('remove test database', function * () {
     this.timeout(5000);
 
     const dbsAfterDelete = yield (Rx.Observable.concat(
@@ -76,7 +76,7 @@ describe('rx-couch.db()', () => {
       expect(() => db.put(42)).to.throw('rxCouch.db.put: invalid document value');
     });
 
-    it('should assign a document ID if no document ID is provided', function *() {
+    it('should assign a document ID if no document ID is provided', function * () {
       // http://docs.couchdb.org/en/latest/api/database/common.html#post--db
 
       const putResponse = yield db.put({foo: 'bar'}).shouldGenerateOneValue();
@@ -89,7 +89,7 @@ describe('rx-couch.db()', () => {
       randomDocId = putResponse.id;
     });
 
-    it('should create a new document using specific ID if provided', function *() {
+    it('should create a new document using specific ID if provided', function * () {
       // http://docs.couchdb.org/en/latest/api/document/common.html#put--db-docid
 
       const putResponse = yield db.put({_id: 'testing123', foo: 'bar'}).shouldGenerateOneValue();
@@ -101,7 +101,7 @@ describe('rx-couch.db()', () => {
       rev1 = putResponse.rev;
     });
 
-    it('should not alter the object that was provided to it', function *() {
+    it('should not alter the object that was provided to it', function * () {
       // http://docs.couchdb.org/en/latest/api/document/common.html#put--db-docid
 
       let putObject = {_id: 'testing234', foo: 'bar'};
@@ -112,7 +112,7 @@ describe('rx-couch.db()', () => {
       expect(putObject).to.deep.equal({_id: 'testing234', foo: 'bar'});
     });
 
-    it('should update an existing document when _id and _rev are provided', function *() {
+    it('should update an existing document when _id and _rev are provided', function * () {
       const putResponse = yield db.put({_id: 'testing123', _rev: rev1, foo: 'baz'}).shouldGenerateOneValue();
 
       expect(putResponse).to.be.an('object');
@@ -122,12 +122,12 @@ describe('rx-couch.db()', () => {
       rev2 = putResponse.rev;
     });
 
-    it('should fail when _id matches an existing document but no _rev is provided', function *() {
+    it('should fail when _id matches an existing document but no _rev is provided', function * () {
       const err = yield db.put({_id: 'testing123', foo: 'bar'}).shouldThrow();
       expect(err.message).to.equal('HTTP Error 409: Conflict');
     });
 
-    it('should fail when _id matches an existing document but incorrect _rev is provided', function *() {
+    it('should fail when _id matches an existing document but incorrect _rev is provided', function * () {
       const err = yield db.put({_id: 'testing123', '_rev': 'bogus', foo: 'bar'}).shouldThrow();
       expect(err.message).to.equal('HTTP Error 400: Bad Request');
     });
@@ -148,7 +148,7 @@ describe('rx-couch.db()', () => {
       expect(() => db.get(42)).to.throw('rxCouch.db.get: invalid document ID');
     });
 
-    it("should retrieve a document's current value if no options are provided", function *() {
+    it("should retrieve a document's current value if no options are provided", function * () {
       const getResponse = yield db.get('testing123').shouldGenerateOneValue();
       expect(getResponse).to.be.an('object');
       expect(getResponse._id).to.equal('testing123');
@@ -156,7 +156,7 @@ describe('rx-couch.db()', () => {
       expect(getResponse.foo).to.equal('baz');
     });
 
-    it('should pass through options when provided', function *() {
+    it('should pass through options when provided', function * () {
       const getResponse = yield db.get('testing123', {rev: rev1}).shouldGenerateOneValue();
       expect(getResponse).to.be.an('object');
       expect(getResponse._id).to.equal('testing123');
@@ -164,7 +164,7 @@ describe('rx-couch.db()', () => {
       expect(getResponse.foo).to.equal('bar');
     });
 
-    it("should fail when _id doesn't match an existing document", function *() {
+    it("should fail when _id doesn't match an existing document", function * () {
       const err = yield db.get('testing432').shouldThrow();
       expect(err.message).to.equal('HTTP Error 404: Object Not Found');
     });
@@ -194,7 +194,7 @@ describe('rx-couch.db()', () => {
 
     let initialRev;
 
-    it('should create a new document if no existing document exists', function *() {
+    it('should create a new document if no existing document exists', function * () {
       const updateResponse = yield db.update({_id: 'update-test', foo: 'bar'}).shouldGenerateOneValue();
       expect(updateResponse).to.be.an('object');
       expect(updateResponse.id).to.equal('update-test');
@@ -210,7 +210,7 @@ describe('rx-couch.db()', () => {
       });
     });
 
-    it('should not alter the object that was provided to it', function *() {
+    it('should not alter the object that was provided to it', function * () {
       let updateObject = {_id: 'update-test-2', foo: 'bar'};
       const updateResponse = yield db.update(updateObject).shouldGenerateOneValue();
 
@@ -219,7 +219,7 @@ describe('rx-couch.db()', () => {
       expect(updateObject).to.deep.equal({_id: 'update-test-2', foo: 'bar'});
     });
 
-    it('should not create a new revision if nothing changed', function *() {
+    it('should not create a new revision if nothing changed', function * () {
       const updateResponse = yield db.update({_id: 'update-test', foo: 'bar'}).shouldGenerateOneValue();
 
       expect(updateResponse).to.deep.equal({
@@ -237,7 +237,7 @@ describe('rx-couch.db()', () => {
       });
     });
 
-    it('should update an existing document when new content is provided', function *() {
+    it('should update an existing document when new content is provided', function * () {
       const updateResponse = yield db.update({_id: 'update-test', foo: 'baz'}).shouldGenerateOneValue();
 
       expect(updateResponse).to.be.an('object');
@@ -279,7 +279,7 @@ describe('rx-couch.db()', () => {
 
     let initialRev;
 
-    it('should create a new document if no existing document exists', function *() {
+    it('should create a new document if no existing document exists', function * () {
       const replaceResponse = yield db.replace({_id: 'replace-test', foo: 'bar'}).shouldGenerateOneValue();
 
       expect(replaceResponse).to.be.an('object');
@@ -296,7 +296,7 @@ describe('rx-couch.db()', () => {
       });
     });
 
-    it('should not alter the object that was provided to it', function *() {
+    it('should not alter the object that was provided to it', function * () {
       let replaceObject = {_id: 'replace-test-2', foo: 'bar'};
       const replaceResponse = yield db.replace(replaceObject).shouldGenerateOneValue();
 
@@ -305,7 +305,7 @@ describe('rx-couch.db()', () => {
       expect(replaceObject).to.deep.equal({_id: 'replace-test-2', foo: 'bar'});
     });
 
-    it('should not create a new revision if nothing changed', function *() {
+    it('should not create a new revision if nothing changed', function * () {
       const replaceResponse = yield db.replace({_id: 'replace-test', foo: 'bar'}).shouldGenerateOneValue();
 
       expect(replaceResponse).to.deep.equal({
@@ -323,7 +323,7 @@ describe('rx-couch.db()', () => {
       });
     });
 
-    it('should replace an existing document when new content is provided', function *() {
+    it('should replace an existing document when new content is provided', function * () {
       const replaceResponse = yield db.replace({_id: 'replace-test', flip: 'baz'}).shouldGenerateOneValue();
 
       expect(replaceResponse).to.be.an('object');
@@ -347,7 +347,7 @@ describe('rx-couch.db()', () => {
       expect(db).to.respondTo('delete');
     });
 
-    it('should return summary information about all documents with no query options', function *() {
+    it('should return summary information about all documents with no query options', function * () {
       const allDocsResult = yield db.allDocs().shouldGenerateOneValue();
       const simplifiedDocsResult = shallowCopy(allDocsResult);
       simplifiedDocsResult.rows = allDocsResult.rows.map(row => {
@@ -419,7 +419,7 @@ describe('rx-couch.db()', () => {
       });
     });
 
-    it('should return full document values for some documents with appropriate query parameters', function *() {
+    it('should return full document values for some documents with appropriate query parameters', function * () {
       const allDocsResult = yield db.allDocs({
         startkey: 'testing123',
         endkey: 'testing234',
@@ -496,12 +496,12 @@ describe('rx-couch.db()', () => {
       expect(() => db.delete('testing123', 42)).to.throw('rxCouch.db.delete: invalid revision ID');
     });
 
-    it('should fail when _id matches an existing document but incorrect _rev is provided', function *() {
+    it('should fail when _id matches an existing document but incorrect _rev is provided', function * () {
       const err = yield db.delete('testing123', 'bogus').shouldThrow();
       expect(err.message).to.equal('HTTP Error 400: Bad Request');
     });
 
-    it('should delete an existing document when correct _id and _rev are provided', function *() {
+    it('should delete an existing document when correct _id and _rev are provided', function * () {
       const deleteResponse = yield db.delete('testing123', rev2).shouldGenerateOneValue();
       expect(deleteResponse).to.be.an('object');
       expect(deleteResponse.id).to.equal('testing123');
@@ -509,7 +509,7 @@ describe('rx-couch.db()', () => {
       expect(deleteResponse.rev).to.match(/^3-/);
     });
 
-    it('should actually have deleted the existing document', function *() {
+    it('should actually have deleted the existing document', function * () {
       const err = yield db.get('testing123').shouldThrow();
       expect(err.message).to.equal('HTTP Error 404: Object Not Found');
     });
@@ -518,14 +518,14 @@ describe('rx-couch.db()', () => {
   describe('.replicateFrom()', () => {
     const srcDb = server.db('test-rx-couch-clone-source');
 
-    before('create test databases', function *() {
+    before('create test databases', function * () {
       yield server.createDatabase('test-rx-couch-clone-source').shouldBeEmpty();
       yield server.createDatabase('test-rx-couch-clone-target').shouldBeEmpty();
       let putObject = {_id: 'testing234', foo: 'bar'};
       yield srcDb.put(putObject).shouldGenerateOneValue();
     });
 
-    after('destroy test databases', function *() {
+    after('destroy test databases', function * () {
       yield server.deleteDatabase('test-rx-couch-clone-source').shouldBeEmpty();
       yield server.deleteDatabase('test-rx-couch-clone-target').shouldBeEmpty();
     });
@@ -545,7 +545,7 @@ describe('rx-couch.db()', () => {
       })).to.throw('rxCouch.db.replicateFrom: options.target must not be specified');
     });
 
-    it('should return an Observable with status information', function *() {
+    it('should return an Observable with status information', function * () {
       const replResult = yield srcDb.replicateFrom({
         source: 'test-rx-couch-clone-source'
       }).shouldGenerateOneValue();
@@ -565,7 +565,7 @@ describe('rx-couch.db()', () => {
       expect(() => db.changes({feed: 'continuous'})).to.throw('rxCouch.db.changes: feed: "continuous" not supported');
     });
 
-    it('should return summary information about all documents with no query options', function *() {
+    it('should return summary information about all documents with no query options', function * () {
       const iter = db.changes()
         .skip(1)
         .map(result => {
@@ -616,7 +616,7 @@ describe('rx-couch.db()', () => {
       yield iter.shouldComplete();
     });
 
-    it('should return full document values for some documents with appropriate query parameters', function *() {
+    it('should return full document values for some documents with appropriate query parameters', function * () {
       const iter = db.changes({
         doc_ids: ['testing123', 'testing234'],
         filter: '_doc_ids',
@@ -655,7 +655,7 @@ describe('rx-couch.db()', () => {
       yield iter.shouldComplete();
     });
 
-    it('should continuously monitor the database if feed: longpoll is used', function *() {
+    it('should continuously monitor the database if feed: longpoll is used', function * () {
       const iter = db.changes({
         doc_ids: ['testing234'],
         feed: 'longpoll',
@@ -714,7 +714,7 @@ describe('rx-couch.db()', () => {
       iter.unsubscribe();
     });
 
-    it('should stop monitoring the database when unsubscribed', function *() {
+    it('should stop monitoring the database when unsubscribed', function * () {
       const iter = db.changes({
         doc_ids: ['testing234'],
         feed: 'longpoll',
@@ -753,7 +753,7 @@ describe('rx-couch.db()', () => {
       expect(db._changesFetchCount).to.equal(fetchCountAtUnsubscribe);
     });
 
-    it('should continue to monitor changes even if a timeout occurs', function *() {
+    it('should continue to monitor changes even if a timeout occurs', function * () {
       const iter = db.changes({
         doc_ids: ['testing234'],
         feed: 'longpoll',
@@ -811,7 +811,7 @@ describe('rx-couch.db()', () => {
       expect(() => db.observe(42)).to.throw('rxCouch.db.observe: invalid document ID');
     });
 
-    it('should send the current document value immediately if it exists, then update it with new value when it exists', function *() {
+    it('should send the current document value immediately if it exists, then update it with new value when it exists', function * () {
       const iter = db.observe('testing234')
         .map(doc => { delete doc._rev; return doc; })
         .toAsyncIterator();
@@ -834,7 +834,7 @@ describe('rx-couch.db()', () => {
       iter.unsubscribe();
     });
 
-    it('should return a placeholder if the document does not exist, then replace it with the correct value when it does exist', function *() {
+    it('should return a placeholder if the document does not exist, then replace it with the correct value when it does exist', function * () {
       const iter = db.observe('testing987')
         .map(doc => { delete doc._rev; return doc; })
         .toAsyncIterator();
@@ -854,7 +854,7 @@ describe('rx-couch.db()', () => {
       iter.unsubscribe();
     });
 
-    it('should return a placeholder if the document is deleted', function *() {
+    it('should return a placeholder if the document is deleted', function * () {
       let revId;
 
       const iter = db.observe('testing987')

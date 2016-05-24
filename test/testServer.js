@@ -36,7 +36,7 @@ describe('rx-couch', () => {
   });
 
   describe('.allDatabases()', () => {
-    it('should return an Observable which yields a list of databases', function *() {
+    it('should return an Observable which yields a list of databases', function * () {
       const databases = yield server.allDatabases().shouldGenerateOneValue();
       expect(databases).to.be.an('array');
       databases.forEach((dbName) => { expect(dbName).to.be.a('string'); });
@@ -45,15 +45,15 @@ describe('rx-couch', () => {
   });
 
   describe('.createDatabase()', () => {
-    it('should return an Observable which sends only onCompleted when done', function *() {
+    it('should return an Observable which sends only onCompleted when done', function * () {
       yield server.createDatabase('test-rx-couch').shouldBeEmpty();
     });
 
-    it('should succeed even if the database already exists', function *() {
+    it('should succeed even if the database already exists', function * () {
       yield server.createDatabase('test-rx-couch').shouldBeEmpty();
     });
 
-    it('should succeed even if the database already exists {failIfExists: false}', function *() {
+    it('should succeed even if the database already exists {failIfExists: false}', function * () {
       yield server.createDatabase('test-rx-couch').shouldBeEmpty();
     });
 
@@ -81,7 +81,7 @@ describe('rx-couch', () => {
       expect(() => server.createDatabase('x', {failIfExists: 'bogus'})).to.throw('rxCouch.createDatabase: options.failIfExists, if present, must be a boolean');
     });
 
-    it('should actually create a new database', function *() {
+    it('should actually create a new database', function * () {
       const dbsAfterCreate = yield (Rx.Observable.concat(
         server.createDatabase('test-rx-couch'),
         server.allDatabases())).shouldGenerateOneValue();
@@ -90,12 +90,12 @@ describe('rx-couch', () => {
       expect(dbsAfterCreate).to.include('test-rx-couch');
     });
 
-    it('should signal an error if database already exists (but only if so requested)', function *() {
+    it('should signal an error if database already exists (but only if so requested)', function * () {
       const err = yield server.createDatabase('test-rx-couch', {failIfExists: true}).shouldThrow();
       expect(err.message).to.equal('HTTP Error 412: Precondition Failed');
     });
 
-    it('should send an onError message if server yields unexpected result', function *() {
+    it('should send an onError message if server yields unexpected result', function * () {
       nock('http://localhost:5979')
         .put('/test-rx-couch')
         .reply(500);
@@ -110,14 +110,14 @@ describe('rx-couch', () => {
 
     const srcDb = server.db('test-rx-couch-clone-source');
 
-    before('create test databases', function *() {
+    before('create test databases', function * () {
       yield server.createDatabase('test-rx-couch-clone-source').shouldBeEmpty();
       yield server.createDatabase('test-rx-couch-clone-target').shouldBeEmpty();
       let putObject = {_id: 'testing234', foo: 'bar'};
       yield srcDb.put(putObject).shouldGenerateOneValue();
     });
 
-    after('destroy test databases', function *() {
+    after('destroy test databases', function * () {
       yield server.deleteDatabase('test-rx-couch-clone-source').shouldBeEmpty();
       yield server.deleteDatabase('test-rx-couch-clone-target').shouldBeEmpty();
     });
@@ -130,7 +130,7 @@ describe('rx-couch', () => {
       expect(() => server.replicate('blah')).to.throw('rxCouch.replicate: options must be an object');
     });
 
-    it('should return an Observable with status information', function *() {
+    it('should return an Observable with status information', function * () {
       const replResult = yield server.replicate({
         source: 'test-rx-couch-clone-source',
         target: 'test-rx-couch-clone-target'
@@ -145,11 +145,11 @@ describe('rx-couch', () => {
   describe('.deleteDatabase()', () => {
     nock.cleanAll();
 
-    it('should return an Observable which sends only onCompleted when done', function *() {
+    it('should return an Observable which sends only onCompleted when done', function * () {
       yield server.deleteDatabase('test-rx-couch').shouldBeEmpty();
     });
 
-    it("should succeed even if the database doesn't already exist", function *() {
+    it("should succeed even if the database doesn't already exist", function * () {
       yield server.deleteDatabase('test-rx-couch').shouldBeEmpty();
     });
 
@@ -169,7 +169,7 @@ describe('rx-couch', () => {
       expect(() => server.deleteDatabase('_users')).to.throw('rxCouch.deleteDatabase: illegal dbName');
     });
 
-    it('should actually delete the existing database', function *() {
+    it('should actually delete the existing database', function * () {
       const dbsAfterDelete = yield (Rx.Observable.concat(
         server.deleteDatabase('test-rx-couch'),
         server.allDatabases())).shouldGenerateOneValue();
@@ -178,7 +178,7 @@ describe('rx-couch', () => {
       expect(dbsAfterDelete).to.not.include('test-rx-couch');
     });
 
-    it('should send an onError message if server yields unexpected result', function *() {
+    it('should send an onError message if server yields unexpected result', function * () {
       nock('http://localhost:5979')
         .delete('/test-rx-couch')
         .reply(500);
