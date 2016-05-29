@@ -1,6 +1,6 @@
 {
   "name": "rx-couch",
-  "version": "1.7.2",
+  "version": "1.7.3",
   "description": "RxJS-flavored APIs for CouchDB",
   "main": "index.js",
   "scripts": {
