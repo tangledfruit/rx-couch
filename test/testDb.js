@@ -889,6 +889,28 @@ describe('rx-couch.db()', () => {
         .get('/test-rx-couch-db/_changes?feed=longpoll&include_docs=true&since=17')
         .reply(200, '{"results":[{"seq":18,"id":"testing987","changes":[{"rev":"2-35a5f4b576f2b82f80bc69e71178d236"}],"doc":{"_id":"testing987","_rev":"2-35a5f4b576f2b82f80bc69e71178d236","phone":"hup"}}],"last_seq":18}');
 
+      nock('http://localhost:5979')
+        .get('/test-rx-couch-db/_changes?feed=longpoll&include_docs=true&since=18')
+        .delay(1000)
+        .reply(200, '{"results":[],"last_seq":18}');
+
+      nock('http://localhost:5979')
+        .get('/test-rx-couch-db/testing987')
+        .reply(200, '{"_id":"testing987","_rev":"2-35a5f4b576f2b82f80bc69e71178d236","phone":"hup"}');
+
+      nock('http://localhost:5979')
+        .get('/test-rx-couch-db/testing987')
+        .reply(200, '{"_id":"testing987","_rev":"2-35a5f4b576f2b82f80bc69e71178d236","phone":"hup"}');
+
+      nock('http://localhost:5979')
+        .put('/test-rx-couch-db/testing987', '{"phone":"again?"}')
+        .reply(201, '{"ok":true,"id":"testing987","rev":"3-mumble"}');
+
+      nock('http://localhost:5979')
+        .get('/test-rx-couch-db/_changes?feed=longpoll&include_docs=true&since=now')
+        .delay(200)
+        .reply(200, '{"results":[{"seq":19,"id":"testing987","changes":[{"rev":"3-mumble"}],"doc":{"_id":"testing987","_rev":"3-mumble","phone":"again?"}}],"last_seq":19}');
+
       const iter = db.observe('testing987')
         .map(doc => { delete doc._rev; return doc; })
         .toAsyncIterator();
@@ -905,7 +927,34 @@ describe('rx-couch.db()', () => {
         phone: 'hup'
       });
 
+      expect(db._sharedChangesFeed).to.not.equal(undefined);
+        // Hacky: Sniffing the implementation details.
+
       iter.unsubscribe();
+
+      // Make sure we can start observing again after all previous
+      // subscriptions have ended.
+
+      expect(db._sharedChangesFeed).to.equal(undefined);
+        // Hacky: Sniffing the implementation details.
+
+      const iter2 = db.observe('testing987')
+        .map(doc => { delete doc._rev; return doc; })
+        .toAsyncIterator();
+
+      expect(yield iter2.nextValue()).to.deep.equal({
+        _id: 'testing987',
+        phone: 'hup'
+      });
+
+      yield db.update({_id: 'testing987', phone: 'again?'}).shouldGenerateOneValue();
+
+      expect(yield iter2.nextValue()).to.deep.equal({
+        _id: 'testing987',
+        phone: 'again?'
+      });
+
+      iter2.unsubscribe();
     });
 
     it('should return a placeholder if the document is deleted', function * () {
