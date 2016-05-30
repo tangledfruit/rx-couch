@@ -48,6 +48,7 @@
   "semistandard": {
     "globals": [
       "after",
+      "afterEach",
       "before",
       "describe",
       "fetch",
