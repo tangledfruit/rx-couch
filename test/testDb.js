@@ -6,6 +6,7 @@ require('rx-to-async-iterator');
 const Rx = require('rx');
 const expect = require('chai').expect;
 const RxCouch = require('../lib/server');
+const nock = require('nock');
 const shallowCopy = require('shallow-copy');
 
 describe('rx-couch.db()', () => {
@@ -803,6 +804,10 @@ describe('rx-couch.db()', () => {
   });
 
   describe('.observe()', () => {
+    afterEach(() => {
+      nock.cleanAll();
+    });
+
     it('should throw if id is missing', () => {
       expect(() => db.observe()).to.throw('rxCouch.db.observe: missing document ID');
     });
@@ -849,6 +854,54 @@ describe('rx-couch.db()', () => {
       expect(yield iter.nextValue()).to.deep.equal({
         _id: 'testing987',
         phone: 'ring'
+      });
+
+      iter.unsubscribe();
+    });
+
+    it("should work even if the server doesn't support _doc_ids filter", function * () {
+      // For example: Couchbase Lite on iOS ...
+      const server = new RxCouch('http://localhost:5979');
+      const db = server.db('test-rx-couch-db');
+
+      nock('http://localhost:5979')
+        .get('/test-rx-couch-db/testing987')
+        .reply(200, '{"_id":"testing987","_rev":"1-9b37e2fd94778a46692565e0563a0a4f","phone":"ring"}');
+
+      nock('http://localhost:5979')
+        .get('/test-rx-couch-db/_changes?doc_ids=%5B%22testing987%22%5D&feed=longpoll&filter=_doc_ids&include_docs=true')
+        .reply(404, '{"error":"not_found","reason":"missing"}'); // CBL's way of saying not supported
+
+      nock('http://localhost:5979')
+        .get('/test-rx-couch-db/_changes?feed=longpoll&include_docs=true')
+        .reply(200, '{"results":[{"seq":1,"id":"c5680e9de1b18af5bf26d7215c00d6f5","changes":[{"rev":"1-4c6114c65e295552ab1019e2b046b10e"}],"doc":{"_id":"c5680e9de1b18af5bf26d7215c00d6f5","_rev":"1-4c6114c65e295552ab1019e2b046b10e","foo":"bar"}},{"seq":6,"id":"update-test-2","changes":[{"rev":"1-4c6114c65e295552ab1019e2b046b10e"}],"doc":{"_id":"update-test-2","_rev":"1-4c6114c65e295552ab1019e2b046b10e","foo":"bar"}},{"seq":7,"id":"update-test","changes":[{"rev":"2-cfcd6781f13994bde69a1c3320bfdadb"}],"doc":{"_id":"update-test","_rev":"2-cfcd6781f13994bde69a1c3320bfdadb","foo":"baz"}},{"seq":9,"id":"replace-test-2","changes":[{"rev":"1-4c6114c65e295552ab1019e2b046b10e"}],"doc":{"_id":"replace-test-2","_rev":"1-4c6114c65e295552ab1019e2b046b10e","foo":"bar"}},{"seq":10,"id":"replace-test","changes":[{"rev":"2-fea194f776e8d35413a268bb566b444b"}],"doc":{"_id":"replace-test","_rev":"2-fea194f776e8d35413a268bb566b444b","flip":"baz"}},{"seq":13,"id":"testing123","changes":[{"rev":"1-60b955d0e2831203823f9a0e47e70800"}],"doc":{"_id":"testing123","_rev":"1-60b955d0e2831203823f9a0e47e70800","count":38}},{"seq":16,"id":"testing234","changes":[{"rev":"5-3217b173d31e729c770206f3cf91270d"}],"doc":{"_id":"testing234","_rev":"5-3217b173d31e729c770206f3cf91270d","foo":"blam","bop":"blip","phone":"ring"}},{"seq":17,"id":"testing987","changes":[{"rev":"1-9b37e2fd94778a46692565e0563a0a4f"}],"doc":{"_id":"testing987","_rev":"1-9b37e2fd94778a46692565e0563a0a4f","phone":"ring"}}],"last_seq":17}');
+
+      nock('http://localhost:5979')
+        .get('/test-rx-couch-db/testing987')
+        .reply(200, '{"_id":"testing987","_rev":"1-9b37e2fd94778a46692565e0563a0a4f","phone":"ring"}');
+
+      nock('http://localhost:5979')
+        .put('/test-rx-couch-db/testing987', '{"phone":"hup"}')
+        .reply(201, '{"ok":true,"id":"testing987","rev":"2-35a5f4b576f2b82f80bc69e71178d236"}');
+
+      nock('http://localhost:5979')
+        .get('/test-rx-couch-db/_changes?feed=longpoll&include_docs=true&since=17')
+        .reply(200, '{"results":[{"seq":18,"id":"testing987","changes":[{"rev":"2-35a5f4b576f2b82f80bc69e71178d236"}],"doc":{"_id":"testing987","_rev":"2-35a5f4b576f2b82f80bc69e71178d236","phone":"hup"}}],"last_seq":18}');
+
+      const iter = db.observe('testing987')
+        .map(doc => { delete doc._rev; return doc; })
+        .toAsyncIterator();
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        _id: 'testing987',
+        phone: 'ring'
+      });
+
+      yield db.update({_id: 'testing987', phone: 'hup'}).shouldGenerateOneValue();
+
+      expect(yield iter.nextValue()).to.deep.equal({
+        _id: 'testing987',
+        phone: 'hup'
       });
 
       iter.unsubscribe();
