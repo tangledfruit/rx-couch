@@ -873,8 +873,9 @@ describe('rx-couch.db()', () => {
         .reply(404, '{"error":"not_found","reason":"missing"}'); // CBL's way of saying not supported
 
       nock('http://localhost:5979')
-        .get('/test-rx-couch-db/_changes?feed=longpoll&include_docs=true')
-        .reply(200, '{"results":[{"seq":1,"id":"c5680e9de1b18af5bf26d7215c00d6f5","changes":[{"rev":"1-4c6114c65e295552ab1019e2b046b10e"}],"doc":{"_id":"c5680e9de1b18af5bf26d7215c00d6f5","_rev":"1-4c6114c65e295552ab1019e2b046b10e","foo":"bar"}},{"seq":6,"id":"update-test-2","changes":[{"rev":"1-4c6114c65e295552ab1019e2b046b10e"}],"doc":{"_id":"update-test-2","_rev":"1-4c6114c65e295552ab1019e2b046b10e","foo":"bar"}},{"seq":7,"id":"update-test","changes":[{"rev":"2-cfcd6781f13994bde69a1c3320bfdadb"}],"doc":{"_id":"update-test","_rev":"2-cfcd6781f13994bde69a1c3320bfdadb","foo":"baz"}},{"seq":9,"id":"replace-test-2","changes":[{"rev":"1-4c6114c65e295552ab1019e2b046b10e"}],"doc":{"_id":"replace-test-2","_rev":"1-4c6114c65e295552ab1019e2b046b10e","foo":"bar"}},{"seq":10,"id":"replace-test","changes":[{"rev":"2-fea194f776e8d35413a268bb566b444b"}],"doc":{"_id":"replace-test","_rev":"2-fea194f776e8d35413a268bb566b444b","flip":"baz"}},{"seq":13,"id":"testing123","changes":[{"rev":"1-60b955d0e2831203823f9a0e47e70800"}],"doc":{"_id":"testing123","_rev":"1-60b955d0e2831203823f9a0e47e70800","count":38}},{"seq":16,"id":"testing234","changes":[{"rev":"5-3217b173d31e729c770206f3cf91270d"}],"doc":{"_id":"testing234","_rev":"5-3217b173d31e729c770206f3cf91270d","foo":"blam","bop":"blip","phone":"ring"}},{"seq":17,"id":"testing987","changes":[{"rev":"1-9b37e2fd94778a46692565e0563a0a4f"}],"doc":{"_id":"testing987","_rev":"1-9b37e2fd94778a46692565e0563a0a4f","phone":"ring"}}],"last_seq":17}');
+        .get('/test-rx-couch-db/_changes?feed=longpoll&include_docs=true&since=now')
+        .delay(200)
+        .reply(200, '{"results":[{"seq":17,"id":"testing987","changes":[{"rev":"1-9b37e2fd94778a46692565e0563a0a4f"}],"doc":{"_id":"testing987","_rev":"1-9b37e2fd94778a46692565e0563a0a4f","phone":"ring"}}],"last_seq":17}');
 
       nock('http://localhost:5979')
         .get('/test-rx-couch-db/testing987')
