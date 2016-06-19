@@ -23,9 +23,18 @@ describe('rx-couch', () => {
       .to.throw(/CouchDB server must not contain a path or query string/);
   });
 
-  it('should fail for URL containing a database path', () => {
-    expect(() => new RxCouch('http://localhost:5984/some_db'))
-      .to.throw(/CouchDB server must not contain a path or query string/);
+  it('should allow the base URL for the database server to contain a path', () => {
+    const server = new RxCouch('http://localhost:5984/couch/');
+    expect(server._baseUrl).to.equal('http://localhost:5984/couch/');
+    const db = server.db('some_db');
+    expect(db._dbUrl).to.equal('http://localhost:5984/couch/some_db');
+  });
+
+  it('should allow the base URL for the database server to contain a path without a trailing slash', () => {
+    const server = new RxCouch('http://localhost:5984/couch');
+    expect(server._baseUrl).to.equal('http://localhost:5984/couch/');
+    const db = server.db('some_db');
+    expect(db._dbUrl).to.equal('http://localhost:5984/couch/some_db');
   });
 
   const server = new RxCouch();
