@@ -2,6 +2,10 @@
 
 RxJS-flavored APIs for CouchDB
 
+**IMPORTANT:** This library only supports RxJS 4.x.
+
+**Looking for RxJS 5.0+ support?** Try  [rxjs-couch](https://github.com/tangledfruit/rxjs-couch). (Same name but replace 'rx' with 'rxjs'.)
+
 ## Installation
 
 ### NPM
