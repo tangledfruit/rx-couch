@@ -101,7 +101,7 @@ describe('rx-couch', () => {
 
     it('should signal an error if database already exists (but only if so requested)', function * () {
       const err = yield server.createDatabase('test-rx-couch', {failIfExists: true}).shouldThrow();
-      expect(err.message).to.equal('HTTP Error 412: Precondition Failed');
+      expect(err.message).to.equal('HTTP Error 412 on http://localhost:5984/test-rx-couch: Precondition Failed');
     });
 
     it('should send an onError message if server yields unexpected result', function * () {
@@ -110,7 +110,7 @@ describe('rx-couch', () => {
         .reply(500);
 
       const err = yield (new RxCouch('http://localhost:5979').createDatabase('test-rx-couch')).shouldThrow();
-      expect(err.message).to.equal('HTTP Error 500: Internal Server Error');
+      expect(err.message).to.equal('HTTP Error 500 on http://localhost:5979/test-rx-couch: Internal Server Error');
     });
   });
 
@@ -193,7 +193,7 @@ describe('rx-couch', () => {
         .reply(500);
 
       const err = yield (new RxCouch('http://localhost:5979').deleteDatabase('test-rx-couch')).shouldThrow();
-      expect(err.message).to.equal('HTTP Error 500: Internal Server Error');
+      expect(err.message).to.equal('HTTP Error 500 on http://localhost:5979/test-rx-couch: Internal Server Error');
     });
   });
 });
