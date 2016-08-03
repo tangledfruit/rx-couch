@@ -125,12 +125,12 @@ describe('rx-couch.db()', () => {
 
     it('should fail when _id matches an existing document but no _rev is provided', function * () {
       const err = yield db.put({_id: 'testing123', foo: 'bar'}).shouldThrow();
-      expect(err.message).to.equal('HTTP Error 409: Conflict');
+      expect(err.message).to.equal('HTTP Error 409 on http://127.0.0.1:5984/test-rx-couch-db/testing123: Conflict');
     });
 
     it('should fail when _id matches an existing document but incorrect _rev is provided', function * () {
       const err = yield db.put({_id: 'testing123', '_rev': 'bogus', foo: 'bar'}).shouldThrow();
-      expect(err.message).to.equal('HTTP Error 400: Bad Request');
+      expect(err.message).to.equal('HTTP Error 400 on http://127.0.0.1:5984/test-rx-couch-db/testing123: Bad Request');
     });
   });
 
@@ -167,7 +167,7 @@ describe('rx-couch.db()', () => {
 
     it("should fail when _id doesn't match an existing document", function * () {
       const err = yield db.get('testing432').shouldThrow();
-      expect(err.message).to.equal('HTTP Error 404: Object Not Found');
+      expect(err.message).to.equal('HTTP Error 404 on http://127.0.0.1:5984/test-rx-couch-db/testing432: Object Not Found');
     });
   });
 
@@ -499,7 +499,7 @@ describe('rx-couch.db()', () => {
 
     it('should fail when _id matches an existing document but incorrect _rev is provided', function * () {
       const err = yield db.delete('testing123', 'bogus').shouldThrow();
-      expect(err.message).to.equal('HTTP Error 400: Bad Request');
+      expect(err.message).to.equal('HTTP Error 400 on http://127.0.0.1:5984/test-rx-couch-db/testing123: Bad Request');
     });
 
     it('should delete an existing document when correct _id and _rev are provided', function * () {
@@ -512,7 +512,7 @@ describe('rx-couch.db()', () => {
 
     it('should actually have deleted the existing document', function * () {
       const err = yield db.get('testing123').shouldThrow();
-      expect(err.message).to.equal('HTTP Error 404: Object Not Found');
+      expect(err.message).to.equal('HTTP Error 404 on http://127.0.0.1:5984/test-rx-couch-db/testing123: Object Not Found');
     });
   });
 
