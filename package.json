@@ -34,7 +34,7 @@
     "semistandard": "^9.0.0"
   },
   "dependencies": {
-    "deep-eql": "^1.0.0",
+    "deep-eql": "^2.0.1",
     "deepmerge": "^1.1.0",
     "rx": ">=4.0.7 <5",
     "rx-fetch": "^1.3.4",
